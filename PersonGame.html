@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>🧠 인물 맞추기 게임</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #eef4ff 0%, #f7f3ff 45%, #e5f0ff 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 12px;
+      color: #1f2933;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 960px;
+      background: linear-gradient(135deg, #fdfdff 0%, #f5f7ff 60%, #fbf7ff 100%);
+      border-radius: 26px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      overflow: hidden;
+    }
+
+    /* 헤더 */
+    header {
+      padding: 18px 26px 14px;
+      background: linear-gradient(120deg, #60a5fa, #818cf8, #c4b5fd);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+    }
+
+    .header-title {
+      font-size: 22px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .header-sub {
+      font-size: 13px;
+      opacity: 0.95;
+    }
+
+    .header-progress {
+      font-size: 12px;
+      opacity: 0.9;
+      text-align: right;
+    }
+
+    /* 메인 레이아웃 */
+    main {
+      padding: 22px 26px 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.9fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 800px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .left, .right {
+      background: #ffffff;
+      border-radius: 22px;
+      padding: 20px 18px 18px;
+      box-shadow: 0 14px 30px rgba(148, 163, 184, 0.2);
+      border: 1px solid #e2e8f0;
+    }
+
+    .left-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .left-sub {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 14px;
+    }
+
+    /* 사진 영역 */
+    .photo-wrapper {
+      margin-top: 8px;
+      border-radius: 18px;
+      background: #0f172a;
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      min-height: 220px;
+    }
+
+    #personImg {
+      max-width: 100%;
+      max-height: 260px;
+      border-radius: 16px;
+      object-fit: cover;
+      transition: filter 0.3s ease, opacity 0.3s ease;
+    }
+
+    .photo-overlay-text {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.7);
+      color: #e5e7eb;
+      font-size: 12px;
+    }
+
+    .countdown-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.82);
+      color: #fbbf24;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* 상태 텍스트 */
+    #phaseText {
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    #phaseText.viewing { color: #0ea5e9; }
+    #phaseText.answering { color: #22c55e; }
+    #phaseText.result { color: #4f46e5; }
+
+    /* 입력 영역 */
+    .answer-area {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .answer-area input {
+      flex: 1 1 180px;
+      max-width: 260px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      padding: 9px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .answer-area input:disabled {
+      background: #f3f4f6;
+      color: #9ca3af;
+    }
+
+    .answer-area input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.16);
+    }
+
+    button {
+      font-size: 14px;
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: 1px solid #4f46e5;
+      background: #4f46e5;
+      color: #ffffff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.18s;
+      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+      min-width: 120px;
+      white-space: nowrap;
+    }
+
+    button.secondary {
+      border-color: #9ca3af;
+      background: #e5e7eb;
+      color: #374151;
+      box-shadow: none;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background-color: #4338ca;
+      box-shadow: 0 12px 24px rgba(67, 56, 202, 0.35);
+    }
+
+    button.secondary:hover:not(:disabled) {
+      background: #d1d5db;
+      box-shadow: 0 6px 12px rgba(148, 163, 184, 0.5);
+    }
+
+    .message-line {
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      min-height: 22px;
+      color: #4f46e5;
+    }
+
+    /* 오른쪽: 정보/진행상황 */
+    .right-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .right-sub {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+
+    .stat-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #f9fafb;
+      border: 1px dashed #d1d5db;
+      font-size: 13px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .hint-list {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6b7280;
+      padding-left: 16px;
+    }
+
+    .hint-list li {
+      margin-bottom: 4px;
+    }
+
+    /* 🔥 회원 랭킹 박스 */
+    .ranking-box {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #f3f4ff;
+      border: 1px solid #e0e7ff;
+      box-shadow: 0 10px 18px rgba(148, 163, 184, 0.18);
+      font-size: 13px;
+    }
+
+    .ranking-box-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #4f46e5;
+      margin-bottom: 6px;
+    }
+
+    .ranking-desc {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .rank-list {
+      margin-top: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px dotted #d1d5db;
+      font-size: 12px;
+    }
+
+    .rank-item span:first-child {
+      color: #374151;
+    }
+
+    .rank-item span:last-child {
+      font-weight: 600;
+      color: #4f46e5;
+    }
+
+    .rank-empty {
+      font-size: 12px;
+      color: #9ca3af;
+      padding: 4px 0;
+    }
+
+    footer {
+      padding: 10px 18px 16px;
+      background: rgba(248, 249, 255, 0.9);
+      font-size: 12px;
+      text-align: center;
+      color: #6b7280;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="header-title">
+        <div class="header-left">
+          <div>🧠 인물 맞추기 게임</div>
+          <div class="header-sub">
+            게임 시작과 동시에 사진이 표시되고, <strong>5초 안에 이름을 맞혀야</strong> 합니다.
+          </div>
+        </div>
+        <div class="header-progress" id="headerProgress">
+          준비 중...
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- 왼쪽: 게임 영역 -->
+      <section class="left">
+        <div class="left-title">기억력 & 집중력 테스트</div>
+        <div class="left-sub">
+          <strong>게임 시작</strong> 버튼을 누르면 인물 사진이 바로 나타납니다.<br>
+          5초 안에 이름을 입력하고 <strong>정답 제출</strong> 버튼을 눌러보세요.
+        </div>
+
+        <div class="photo-wrapper">
+          <img id="personImg" src="" alt="person" />
+          <div class="photo-overlay-text" id="overlayText">
+            사진이 이곳에 표시됩니다.
+          </div>
+          <div class="countdown-badge" id="countdownBadge" style="display:none;">
+            5초
+          </div>
+        </div>
+
+        <div id="phaseText" class="phase-text">
+          [게임 시작]을 눌러 첫 번째 인물을 확인해보세요.
+        </div>
+
+        <div class="answer-area">
+          <input
+            type="text"
+            id="answerInput"
+            placeholder="5초 안에 이름을 입력하세요"
+            disabled
+          />
+          <button id="submitBtn" disabled>정답 제출</button>
+          <button id="startBtn" class="secondary">게임 시작 / 다음 인물</button>
+        </div>
+
+        <div id="messageLine" class="message-line"></div>
+      </section>
+
+      <!-- 오른쪽: 규칙 & 진행상황 & 랭킹 -->
+      <section class="right">
+        <div class="right-title">게임 규칙</div>
+        <div class="right-sub">
+          총 인물 목록을 차례대로 보며, 이름을 맞히는 단계형 미니게임입니다.
+        </div>
+
+        <ul class="hint-list">
+          <li>각 인물 사진이 나타나는 즉시, <strong>5초 카운트다운</strong>이 시작됩니다.</li>
+          <li>시간 안에 이름을 입력하고 <strong>정답 제출</strong>을 눌러야 합니다.</li>
+          <li>띄어쓰기/대소문자는 <strong>일부 관대하게</strong> 비교합니다.</li>
+          <li>모든 인물을 맞히면 최종 결과가 표시됩니다.</li>
+        </ul>
+
+        <div class="stat-box">
+          <div class="stat-item">
+            <span>현재 단계</span>
+            <span id="statStage">- / -</span>
+          </div>
+          <div class="stat-item">
+            <span>정답 개수</span>
+            <span id="statCorrect">0</span>
+          </div>
+          <div class="stat-item">
+            <span>연속 정답</span>
+            <span id="statStreak">0</span>
+          </div>
+        </div>
+
+        <!-- 🔥 회원 랭킹 -->
+        <div class="ranking-box">
+          <div class="ranking-box-title">🏆 회원 랭킹 (정답 수 기준)</div>
+          <div class="ranking-desc">
+            Games 화면에서 로그인한 회원의 <strong>최고 정답 수</strong>가 서버에 저장됩니다.
+          </div>
+          <div id="rankingList" class="rank-list">
+            <div class="rank-empty">랭킹 정보를 불러오는 중...</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      2301464 이현빈 · Person Memory Quiz 🎮
+    </footer>
+  </div>
+
+  <script>
+    // ==========================
+    // 📸 인물 데이터
+    // ==========================
+    const persons = [
+      { name: "차은우", img: "차은우이미지.jpg" },
+      { name: "유재석", img: "유재석이미지.jpg" },
+      { name: "아이유", img: "아이유이미지.jpg" },
+      { name: "카리나", img: "카리나이미지.jpg" },
+      { name: "닝닝", img: "닝닝이미지.jpg" },
+      { name: "정국", img: "정국이미지.jpg" },
+      { name: "강호동", img: "강호동이미지.jpg" },
+      { name: "주지훈", img: "주지훈이미지.jpg" },
+      { name: "강하늘", img: "강하늘이미지.jpg" },
+      { name: "지창욱", img: "지창욱이미지.jpg" },
+      { name: "나선욱", img: "나선욱이미지.jpg" },
+      { name: "송혜교", img: "송혜교이미지.jpg" },
+      { name: "전지현", img: "전지현이미지.jpg" },
+      { name: "나문희", img: "나문희이미지.jpg" },
+      { name: "김영광", img: "김영광이미지.jpg" },
+      { name: "정준하", img: "정준하이미지.jpg" },
+      { name: "박명수", img: "박명수이미지.jpg" },
+      { name: "하하", img: "하하이미지.jpg" },
+      { name: "화사", img: "화사이미지.jpg" },
+      { name: "박정민", img: "박정민이미지.jpg" },
+      // 필요하면 계속 추가
+    ];
+
+    // ==========================
+    // 🔧 게임 상태 변수
+    // ==========================
+    let currentIndex = -1;     // 아직 시작 전
+    let correctCount = 0;
+    let streakCount = 0;
+
+    let phase = "idle";        // idle | answering | finished | timeover
+    const showSeconds = 5;
+    let remainingSeconds = 0;
+    let countdownTimerId = null;
+
+    // DOM 요소
+    const headerProgress = document.getElementById("headerProgress");
+    const personImg = document.getElementById("personImg");
+    const overlayText = document.getElementById("overlayText");
+    const countdownBadge = document.getElementById("countdownBadge");
+    const phaseText = document.getElementById("phaseText");
+    const answerInput = document.getElementById("answerInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const startBtn = document.getElementById("startBtn");
+    const messageLine = document.getElementById("messageLine");
+
+    const statStage = document.getElementById("statStage");
+    const statCorrect = document.getElementById("statCorrect");
+    const statStreak = document.getElementById("statStreak");
+
+    const rankingListEl = document.getElementById("rankingList");
+
+    // ==========================
+    // 🧹 보조 함수
+    // ==========================
+    function updateHeaderProgress() {
+      if (currentIndex < 0) {
+        headerProgress.textContent = `총 ${persons.length}명 · 아직 시작 전`;
+        statStage.textContent = `- / ${persons.length}`;
+      } else if (currentIndex >= persons.length) {
+        headerProgress.textContent = `게임 종료 · 정답 ${correctCount} / ${persons.length}`;
+        statStage.textContent = `${persons.length} / ${persons.length}`;
+      } else {
+        headerProgress.textContent = `현재 인물 ${currentIndex + 1} / ${persons.length}`;
+        statStage.textContent = `${currentIndex + 1} / ${persons.length}`;
+      }
+      statCorrect.textContent = correctCount;
+      statStreak.textContent = streakCount;
+    }
+
+    function clearCountdown() {
+      if (countdownTimerId) {
+        clearInterval(countdownTimerId);
+        countdownTimerId = null;
+      }
+    }
+
+    function normalizeName(str) {
+      return str.replace(/\s+/g, "").toLowerCase();
+    }
+
+    function getLoginUsername() {
+      return localStorage.getItem("lhb_username") || null;
+    }
+
+    // ==========================
+    // ▶️ 문제 시작 / 다음 인물
+    // ==========================
+    function startOrNext() {
+      // 정답 입력 중일 때는 실수로 넘기지 않도록 막기
+      if (phase === "answering") return;
+
+      // 게임 끝난 뒤 다시 누르면 초기화
+      if (phase === "finished") {
+        currentIndex = -1;
+        correctCount = 0;
+        streakCount = 0;
+      }
+
+      currentIndex++;
+      if (currentIndex >= persons.length) {
+        // 이미 다 돌았으면 게임 종료 처리
+        finishGame();
+        return;
+      }
+
+      startQuestion(currentIndex);
+    }
+
+    function startQuestion(index) {
+      clearCountdown();
+      phase = "answering";
+
+      const person = persons[index];
+
+      // 이미지 바로 보여주기
+      personImg.src = person.img;
+      personImg.style.opacity = "1";
+      personImg.style.filter = "none";
+
+      overlayText.textContent = "5초 안에 이름을 맞춰보세요!";
+      countdownBadge.style.display = "block";
+
+      phaseText.className = "phase-text answering";
+      phaseText.textContent = "이름을 입력하고 [정답 제출]을 눌러주세요.";
+
+      messageLine.textContent = "";
+      answerInput.value = "";
+      answerInput.disabled = false;
+      submitBtn.disabled = false;
+      answerInput.focus();
+
+      // 5초 카운트다운 시작
+      remainingSeconds = showSeconds;
+      countdownBadge.textContent = `${remainingSeconds}초`;
+
+      countdownTimerId = setInterval(() => {
+        remainingSeconds--;
+        if (remainingSeconds <= 0) {
+          countdownBadge.textContent = `0초`;
+          clearCountdown();
+          handleTimeOver();
+        } else {
+          countdownBadge.textContent = `${remainingSeconds}초`;
+        }
+      }, 1000);
+
+      updateHeaderProgress();
+    }
+
+    function handleTimeOver() {
+      if (phase !== "answering") return;
+
+      phase = "timeover";
+      countdownBadge.style.display = "none";
+
+      streakCount = 0;
+
+      const person = persons[currentIndex];
+
+      phaseText.className = "phase-text result";
+      phaseText.textContent = "시간 초과! 다음 인물로 넘어가볼까요?";
+      messageLine.textContent = `⏰ 시간 초과! 정답은 ${person.name} 이었습니다.`;
+
+      answerInput.disabled = true;
+      submitBtn.disabled = true;
+
+      updateHeaderProgress();
+    }
+
+    function finishGame() {
+      phase = "finished";
+      countdownBadge.style.display = "none";
+
+      phaseText.className = "phase-text result";
+      phaseText.textContent = `게임 종료! 정답 ${correctCount} / ${persons.length}명`;
+      overlayText.textContent = "게임이 끝났습니다. 다시 시작하려면 [게임 시작]을 눌러주세요.";
+      personImg.style.filter = "blur(6px) grayscale(40%)";
+
+      answerInput.disabled = true;
+      submitBtn.disabled = true;
+      messageLine.textContent = "";
+
+      updateHeaderProgress();
+
+      // 🔥 서버에 점수 저장 시도 (로그인한 사람만)
+      saveScoreToServer(correctCount);
+    }
+
+    // ==========================
+    // ✅ 정답 체크
+    // ==========================
+    function submitAnswer() {
+      if (phase !== "answering") return;
+
+      const userInput = answerInput.value.trim();
+      if (!userInput) {
+        alert("이름을 입력한 뒤 제출해주세요.");
+        return;
+      }
+
+      const person = persons[currentIndex];
+      const targetName = normalizeName(person.name);
+      const userName = normalizeName(userInput);
+
+      if (userName === targetName) {
+        // 정답
+        clearCountdown();
+        countdownBadge.style.display = "none";
+
+        correctCount++;
+        streakCount++;
+
+        phase = "result";
+        phaseText.className = "phase-text result";
+        phaseText.textContent = "정답입니다! 다음 인물로 넘어가볼까요?";
+        messageLine.textContent = `✅ 정답: ${person.name}`;
+
+        answerInput.disabled = true;
+        submitBtn.disabled = true;
+      } else {
+        // 오답 (시간은 계속 흐르게 두고, 다시 입력 기회)
+        streakCount = 0;
+        phaseText.className = "phase-text result";
+        phaseText.textContent = "아쉽습니다! 다시 한 번 입력해볼까요?";
+        messageLine.textContent = `❌ 오답입니다. (남은 시간: ${Math.max(remainingSeconds, 0)}초)`;
+        // 입력은 그대로 두고, 남은 시간 동안 다시 시도 가능
+      }
+
+      updateHeaderProgress();
+    }
+
+    // 엔터키로 정답 제출
+    answerInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        submitAnswer();
+      }
+    });
+
+    // 버튼 이벤트
+    startBtn.addEventListener("click", () => {
+      startOrNext();
+    });
+
+    submitBtn.addEventListener("click", () => {
+      submitAnswer();
+    });
+
+    // ==========================
+    // 🏆 랭킹 관련
+    // ==========================
+    function renderRanking(list) {
+      rankingListEl.innerHTML = "";
+      if (!list || list.length === 0) {
+        const div = document.createElement("div");
+        div.className = "rank-empty";
+        div.textContent = "아직 기록이 없습니다. 게임을 플레이해보세요!";
+        rankingListEl.appendChild(div);
+        return;
+      }
+
+      list.forEach((row, idx) => {
+        const item = document.createElement("div");
+        item.className = "rank-item";
+        item.innerHTML = `
+          <span>${idx + 1}위 · ${row.username}</span>
+          <span>${row.score}점</span>
+        `;
+        rankingListEl.appendChild(item);
+      });
+    }
+
+    function showRankingError(msg) {
+      rankingListEl.innerHTML = "";
+      const div = document.createElement("div");
+      div.className = "rank-empty";
+      div.textContent = msg;
+      rankingListEl.appendChild(div);
+    }
+
+    async function loadRanking() {
+      try {
+        const res = await fetch("http://localhost:3000/api/person/ranking");
+        const data = await res.json();
+        if (!data.ok) {
+          showRankingError("랭킹 정보를 불러오지 못했습니다.");
+          return;
+        }
+        renderRanking(data.rows || data.data || []);
+      } catch (err) {
+        console.error(err);
+        showRankingError("서버 연결 오류로 랭킹을 불러오지 못했습니다.");
+      }
+    }
+
+    async function saveScoreToServer(score) {
+      const username = getLoginUsername();
+      if (!username) {
+        // 로그인 안 되어 있으면 알림 없이 조용히 패스
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:3000/api/person/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, score }),
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          console.error("score save failed:", data);
+          return;
+        }
+        // 저장 성공 후 랭킹 새로고침
+        loadRanking();
+      } catch (err) {
+        console.error("score save error:", err);
+      }
+    }
+
+    // 초기 상태
+    updateHeaderProgress();
+    loadRanking();
+  </script>
+</body>
+</html>

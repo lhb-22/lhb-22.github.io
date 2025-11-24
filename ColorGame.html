@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>🎨 색상 구별 테스트</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #eef4ff 0%, #f7f3ff 45%, #e5f0ff 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 12px;
+      color: #1f2933;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 960px;
+      background: linear-gradient(135deg, #fdfdff 0%, #f5f7ff 60%, #fbf7ff 100%);
+      border-radius: 26px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      overflow: hidden;
+    }
+
+    /* 헤더 */
+    header {
+      padding: 18px 26px 14px;
+      background: linear-gradient(120deg, #93c5fd, #a5b4fc, #d8b4fe);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+    }
+
+    .header-title {
+      font-size: 22px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .header-sub {
+      font-size: 13px;
+      opacity: 0.95;
+    }
+
+    .header-login-info {
+      font-size: 12px;
+      opacity: 0.9;
+      text-align: right;
+    }
+
+    /* 메인 레이아웃: 위 게임 / 아래 랭킹 */
+    main {
+      padding: 22px 26px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .left, .right {
+      background: #ffffff;
+      border-radius: 22px;
+      padding: 20px 18px 18px;
+      box-shadow: 0 14px 30px rgba(148, 163, 184, 0.2);
+      border: 1px solid #e2e8f0;
+    }
+
+    /* 왼쪽(위쪽): 게임 영역 */
+    .left-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .left-sub {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 14px;
+    }
+
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .status-pill {
+      flex: 1;
+      min-width: 120px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #eef2ff;
+      border: 1px solid #d4ddff;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .status-label {
+      font-size: 11px;
+      color: #6b7280;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .status-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #4f46e5;
+    }
+
+    .top-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+    }
+
+    .top-desc {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    button {
+      font-size: 14px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: 1px solid #4f46e5;
+      background: #4f46e5;
+      color: #ffffff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.18s;
+      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+      min-width: 140px;
+      align-self: flex-start;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background-color: #4338ca;
+      box-shadow: 0 12px 24px rgba(67, 56, 202, 0.35);
+    }
+
+    /* 게임 박스 */
+    #game-wrapper {
+      margin-top: 10px;
+      padding: 16px 18px 20px;
+      border-radius: 22px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+      overflow-x: auto; /* 색판이 커져도 가로 스크롤로 해결 */
+    }
+
+    #game {
+      display: grid;
+      justify-content: center;
+      margin: 10px auto 4px;
+      gap: 8px;
+      width: fit-content;
+      min-height: 220px;
+      padding: 10px;
+    }
+
+    .block {
+      width: 60px;
+      height: 60px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+    }
+
+    .block:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.28);
+    }
+
+    .result-msg {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #4f46e5;
+      min-height: 20px;
+      text-align: left;
+    }
+
+    /* 아래쪽: 랭킹 */
+    .right-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .right-sub {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4f46e5;
+      margin-top: 4px;
+      margin-bottom: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    th, td {
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    th {
+      font-size: 12px;
+      color: #6b7280;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: #f9fafb;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f3f4ff;
+    }
+
+    .empty-row {
+      font-size: 12px;
+      color: #9ca3af;
+      padding: 10px 0;
+    }
+
+    footer {
+      padding: 10px 18px 16px;
+      background: rgba(248, 249, 255, 0.9);
+      font-size: 12px;
+      text-align: center;
+      color: #6b7280;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="header-title">
+        <div class="header-left">
+          <div>🎨 색상 구별 테스트</div>
+          <div class="header-sub">
+            비슷한 색들 중에서 <strong>하나만 다른 색</strong>을 찾아 클릭해보세요!
+          </div>
+        </div>
+        <div class="header-login-info" id="loginInfo">
+          로그인 상태 확인 중...
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- 위: 게임 영역 -->
+      <section class="left">
+        <div class="left-title">색감 집중력 테스트</div>
+        <div class="left-sub">
+          <strong>게임 시작</strong> 버튼을 누르면 여러 개의 색 블록이 나타납니다.<br>
+          그 중 <strong>한 칸만 살짝 다른 색</strong>을 찾아 클릭하면 점수가 올라가요.
+        </div>
+
+        <!-- 점수 / 타이머 / 레벨 -->
+        <div class="status-bar">
+          <div class="status-pill">
+            <div class="status-label">SCORE</div>
+            <div class="status-value" id="scoreValue">0 점</div>
+          </div>
+          <div class="status-pill">
+            <div class="status-label">TIMER</div>
+            <div class="status-value" id="timerValue">남은 시간: 5초</div>
+          </div>
+          <div class="status-pill">
+            <div class="status-label">LEVEL</div>
+            <div class="status-value" id="levelValue">1 단계</div>
+          </div>
+        </div>
+
+        <div class="top-controls">
+          <p class="top-desc">
+            레벨이 올라갈수록 칸 개수가 많아지고, 색 차이가 점점 더 미묘해집니다.<br>
+            제한 시간 안에 다른 색을 못 찾거나 틀리면 게임이 종료됩니다.
+          </p>
+          <button id="startBtn">게임 시작 💫</button>
+        </div>
+
+        <div id="game-wrapper">
+          <div id="game"></div>
+        </div>
+
+        <div id="resultMsg" class="result-msg"></div>
+      </section>
+
+      <!-- 아래: 랭킹 영역 -->
+      <section class="right">
+        <div class="right-title">전체 회원 색상 구별 랭킹 (Top 10)</div>
+        <div class="right-sub">
+          로그인한 회원의 점수가 서버에 저장되고,<br>
+          모든 회원과 색상 구별 실력을 겨룰 수 있습니다.
+        </div>
+
+        <div class="tag-chip">
+          <span>🏆</span> 점수가 높을수록 상위에 표시됩니다.
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>닉네임</th>
+              <th>점수</th>
+            </tr>
+          </thead>
+          <tbody id="rankBody">
+            <!-- 서버에서 랭킹 받아와서 채움 -->
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer>
+      2301464 이현빈 · Color Vision Mini Game 🎮
+    </footer>
+  </div>
+
+  <script>
+    // ==========================
+    // 🔑 로그인 정보 읽기
+    // ==========================
+    function getLoginUsername() {
+      const simple = localStorage.getItem("lhb_username");
+      if (simple) return simple;
+
+      const raw = localStorage.getItem("lhb_loginUser");
+      if (raw) {
+        try {
+          const obj = JSON.parse(raw);
+          return obj.username || obj.loginId || null;
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
+
+    const loginInfoEl = document.getElementById("loginInfo");
+    let loginUsername = getLoginUsername();
+
+    if (loginUsername) {
+      loginInfoEl.textContent = `${loginUsername}님 로그인 중`;
+    } else {
+      loginInfoEl.textContent =
+        "로그인하지 않은 상태입니다 (Games 화면에서 로그인하면 랭킹에 기록됩니다)";
+    }
+
+    // ==========================
+    // 🎮 게임 상태 변수
+    // ==========================
+    let level = 1;
+    let score = 0;
+    let timer = 5;
+    let countdown = null;
+    let isGameOver = false;
+
+    const gameEl   = document.getElementById("game");
+    const startBtn = document.getElementById("startBtn");
+    const scoreValueEl = document.getElementById("scoreValue");
+    const timerValueEl = document.getElementById("timerValue");
+    const levelValueEl = document.getElementById("levelValue");
+    const resultMsgEl  = document.getElementById("resultMsg");
+    const rankBody     = document.getElementById("rankBody");
+
+    // ==========================
+    // 📊 랭킹 불러오기
+    // ==========================
+    function fetchColorRanking() {
+      fetch("http://localhost:3000/api/color/rank")
+        .then(res => res.json())
+        .then(data => {
+          if (!data.ok) {
+            console.error("색상게임 랭킹 조회 실패:", data);
+            renderEmptyRanking("랭킹 정보를 불러오지 못했습니다.");
+            return;
+          }
+          renderRanking(data.data || []);
+        })
+        .catch(err => {
+          console.error(err);
+          renderEmptyRanking("서버에 연결할 수 없습니다.");
+        });
+    }
+
+    function renderEmptyRanking(msg) {
+      rankBody.innerHTML = "";
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 3;
+      td.className = "empty-row";
+      td.textContent = msg || "아직 랭킹 데이터가 없습니다. 게임을 시작해보세요!";
+      tr.appendChild(td);
+      rankBody.appendChild(tr);
+    }
+
+    function renderRanking(list) {
+      rankBody.innerHTML = "";
+      if (!list.length) {
+        renderEmptyRanking();
+        return;
+      }
+
+      list.forEach((row, idx) => {
+        const tr = document.createElement("tr");
+        const rankTd = document.createElement("td");
+        const userTd = document.createElement("td");
+        const scoreTd = document.createElement("td");
+
+        rankTd.textContent  = idx + 1;
+        userTd.textContent  = row.username;
+        scoreTd.textContent = row.score;
+
+        tr.appendChild(rankTd);
+        tr.appendChild(userTd);
+        tr.appendChild(scoreTd);
+        rankBody.appendChild(tr);
+      });
+    }
+
+    // 페이지 처음 열릴 때 랭킹 한 번 로딩
+    fetchColorRanking();
+
+    // ==========================
+    // 🕹 게임 시작
+    // ==========================
+    function startGame() {
+      level = 1;
+      score = 0;
+      timer = 5;
+      isGameOver = false;
+
+      scoreValueEl.textContent = `${score} 점`;
+      timerValueEl.textContent = `남은 시간: ${timer}초`;
+      levelValueEl.textContent = `${level} 단계`;
+      resultMsgEl.textContent = "";
+
+      clearInterval(countdown);
+      makeGrid();
+    }
+
+    // ==========================
+    // 🧩 새 라운드 만들기
+    // ==========================
+    function makeGrid() {
+      if (isGameOver) return;
+
+      clearInterval(countdown);
+      timer = 5;
+      timerValueEl.textContent = `남은 시간: ${timer}초`;
+      gameEl.innerHTML = "";
+
+      const size  = Math.min(2 + level, 7); // 최대 7x7
+      const total = size * size;
+      gameEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;
+
+      const baseColor  = randomColor();
+      const diff       = Math.max(40 - level * 3, 10); // 레벨 올라갈수록 차이↓
+      const diffColor  = changeBrightness(baseColor, diff);
+      const correctIdx = Math.floor(Math.random() * total);
+
+      for (let i = 0; i < total; i++) {
+        const block = document.createElement("div");
+        block.className = "block";
+        block.style.backgroundColor = (i === correctIdx) ? diffColor : baseColor;
+        block.addEventListener("click", () => checkAnswer(i === correctIdx));
+        gameEl.appendChild(block);
+      }
+
+      countdown = setInterval(() => {
+        timer--;
+        timerValueEl.textContent = `남은 시간: ${timer}초`;
+        if (timer <= 0) {
+          clearInterval(countdown);
+          resultMsgEl.textContent = "⏰ 시간 초과! 게임이 종료되었습니다.";
+          endGame();
+        }
+      }, 1000);
+    }
+
+    // ==========================
+    // ✅ 정답 체크
+    // ==========================
+    function checkAnswer(isCorrect) {
+      if (isGameOver) return;
+      clearInterval(countdown);
+
+      if (isCorrect) {
+        score += 10;
+        level += 1;
+        scoreValueEl.textContent = `${score} 점`;
+        levelValueEl.textContent = `${level} 단계`;
+        resultMsgEl.textContent = "정답입니다! 다음 단계로 넘어갑니다 ✨";
+        setTimeout(makeGrid, 700);
+      } else {
+        resultMsgEl.textContent = "❌ 틀렸어요! 게임이 종료되었습니다.";
+        endGame();
+      }
+    }
+
+    // ==========================
+    // 🏁 게임 종료 + 서버 저장
+    // ==========================
+    function endGame() {
+      isGameOver = true;
+      clearInterval(countdown);
+
+      loginUsername = getLoginUsername();
+
+      if (!loginUsername) {
+        alert("로그인한 회원만 랭킹에 기록됩니다.\nGames 화면 상단에서 먼저 로그인해주세요!");
+        return;
+      }
+
+      fetch("http://localhost:3000/api/color/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: loginUsername,
+          score: score
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.ok) {
+            console.error("색상게임 점수 저장 실패:", data);
+            alert("점수 저장에 실패했습니다. (서버 로그를 확인해주세요)");
+            return;
+          }
+          // 저장 성공 후 랭킹 새로고침
+          fetchColorRanking();
+        })
+        .catch(err => {
+          console.error(err);
+          alert("서버에 접속할 수 없습니다. server.js가 켜져 있는지 확인해주세요!");
+        });
+    }
+
+    // ==========================
+    // 🎨 색상 유틸
+    // ==========================
+    function randomColor() {
+      const r = Math.floor(Math.random() * 120) + 80;
+      const g = Math.floor(Math.random() * 120) + 80;
+      const b = Math.floor(Math.random() * 120) + 80;
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function changeBrightness(color, diff) {
+      const [r, g, b] = color.match(/\d+/g).map(Number);
+      return `rgb(${Math.min(r + diff, 255)}, ${Math.min(g + diff, 255)}, ${Math.min(b + diff, 255)})`;
+    }
+
+    // ==========================
+    // 🎛 이벤트 연결
+    // ==========================
+    startBtn.addEventListener("click", startGame);
+  </script>
+</body>
+</html>

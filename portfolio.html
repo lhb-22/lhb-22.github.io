@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>🎮 이현빈의 미니게임 월드</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background-color: #bba7e3; /* 톤다운 보라 */
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+      color: #333;
+    }
+
+    .page-wrap {
+      width: 100%;
+      max-width: 1080px;
+      background-color: #f7f3ff;
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+
+    header {
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #f7f3ff;
+    }
+
+    .logo {
+      font-weight: 800;
+      font-size: 22px;
+      color: #5c2cff;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 26px;
+      font-size: 15px;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #666;
+      position: relative;
+      padding-bottom: 3px;
+    }
+
+    nav a.active {
+      color: #5c2cff;
+      font-weight: 700;
+    }
+
+    nav a.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 2px;
+      background-color: #5c2cff;
+    }
+
+    /* 오른쪽 헤더 영역 (로그인 or 환영문구) */
+    .header-right {
+      min-width: 260px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .login-box {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .login-box input {
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      padding: 6px 12px;
+      outline: none;
+      font-size: 12px;
+    }
+
+    .login-box button {
+      border-radius: 999px;
+      border: none;
+      background-color: #5c2cff;
+      color: #fff;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .login-box a {
+      font-size: 11px;
+      color: #5c2cff;
+      text-decoration: none;
+      margin-left: 6px;
+      white-space: nowrap;
+    }
+
+    .welcome-box {
+      font-size: 13px;
+      color: #5c2cff;
+      font-weight: 700;
+      display: none; /* 로그인 전에는 숨김 */
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .logout-btn {
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid #5c2cff;
+      background-color: #ffffff;
+      color: #5c2cff;
+      cursor: pointer;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      padding: 26px 40px 34px;
+    }
+
+    /* LEFT: GAME NIGHT 카드 */
+    .hero-card {
+      background-color: #ffb6d9;
+      border-radius: 18px;
+      padding: 32px 28px;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-badge {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: #fff;
+      opacity: 0.9;
+    }
+
+    .hero-title {
+      font-size: 44px;
+      font-weight: 900;
+      color: #fff;
+      margin-top: 12px;
+      line-height: 1;
+    }
+
+    .hero-sub {
+      margin-top: 18px;
+      font-size: 13px;
+      color: #ffe6f7;
+      max-width: 270px;
+    }
+
+    /* 고객센터 버튼 */
+    .hero-start-btn {
+      margin-top: 24px;
+      border: 2px solid #5c2cff;
+      border-radius: 999px;
+      background-color: #ffffff;
+      color: #5c2cff;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 10px 22px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 10px 18px rgba(92,44,255,0.15);
+    }
+
+    /* 조이스틱 (왼쪽 카드 내부 오른쪽 아래) */
+    .hero-joystick {
+      position: absolute;
+      right: -15px;
+      bottom: -10px;
+      width: 240px;
+      opacity: 0.95;
+      filter: drop-shadow(0px 8px 15px rgba(0,0,0,0.2));
+      pointer-events: none;
+    }
+
+    /* RIGHT SIDE */
+    .right-side {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .games-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #5c2cff;
+    }
+
+    .game-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .game-card {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+
+    .game-info {
+      text-align: left;
+    }
+
+    .game-name {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .game-desc {
+      font-size: 12px;
+      color: #777;
+    }
+
+    .play-btn {
+      background-color: #ff80c1;
+      color: white;
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .play-btn.disabled {
+      background-color: #c8c4d7;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px 0 16px;
+      font-size: 12px;
+      color: #8462ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    
+    <header>
+      <div class="logo">LHB GAMES</div>
+
+      <nav>
+        <ul>
+          <li><a href="MyPage.html">Home</a></li>
+          <li><a href="portfolio.html" class="active">Games</a></li>
+          <li><a href="signup.html">회원가입</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-right">
+        <!-- 로그인 박스 -->
+        <div class="login-box" id="loginBox">
+          <input type="text" id="loginIdInput" placeholder="Log in ID">
+          <input type="password" id="loginPwInput" placeholder="Password">
+          <button id="loginBtn">Log in</button>
+          <a href="signup.html">회원가입</a>
+        </div>
+
+        <!-- 로그인 후 보이는 환영 문구 -->
+        <div class="welcome-box" id="welcomeBox">
+          <span id="welcomeText"></span>
+          <button class="logout-btn" id="logoutBtn">로그아웃</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- 왼쪽 GAME NIGHT 카드 -->
+      <section class="hero-card">
+        <div class="hero-badge">GAME · FUN · PORTFOLIO</div>
+        <div class="hero-title">GAME<br>NIGHT</div>
+
+        <p class="hero-sub">
+          HTML & CSS로 만든 <strong>이현빈</strong>의<br>
+          미니게임 컬렉션입니다 💕<br>
+          궁금한 점이 있을 때 문의해 주세요!
+        </p>
+
+        <a href="customer.html" class="hero-start-btn">📞 고객센터 문의하기</a>
+
+        <img src="joystick.png" class="hero-joystick" alt="joystick">
+      </section>
+
+      <!-- 오른쪽 게임 리스트 -->
+      <section class="right-side">
+        <div class="games-title">Mini Game List</div>
+
+        <div class="game-list">
+
+          <div class="game-card">
+            <div class="game-info">
+              <div class="game-name">🎨 색상 구별 테스트</div>
+              <div class="game-desc">비슷한 색 중에서 다른 색을 찾는 미니게임</div>
+            </div>
+            <a href="ColorGame.html" class="play-btn">Play</a>
+          </div>
+
+          <div class="game-card">
+            <div class="game-info">
+               <div class="game-name">⚡ 반응 속도 테스트</div>
+               <div class="game-desc">신호등이 초록색 될 때 클릭하는 반응속도 게임</div>
+             </div>
+            <a href="ReactionGame.html" class="play-btn">Play</a>
+          </div>
+
+          <div class="game-card">
+            <div class="game-info">
+              <div class="game-name">🧠 인물 맞추기 게임</div>
+              <div class="game-desc">5초 동안 기억한 후 이름을 맞히는 게임</div>
+            </div>
+            <!-- 🔽 여기만 수정: Soon span → PersonGame.html로 연결되는 Play 버튼 -->
+            <a href="PersonGame.html" class="play-btn">Play</a>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <footer>2301464 이현빈 · Mini Game World </footer>
+
+  </div>
+
+  <script>
+    const loginBox   = document.getElementById("loginBox");
+    const welcomeBox = document.getElementById("welcomeBox");
+    const welcomeTxt = document.getElementById("welcomeText");
+    const loginBtn   = document.getElementById("loginBtn");
+    const logoutBtn  = document.getElementById("logoutBtn");
+    const idInput    = document.getElementById("loginIdInput");
+    const pwInput    = document.getElementById("loginPwInput");
+
+    // 이미 로그인한 적 있으면(브라우저에 저장) 바로 환영 문구 표시
+    const savedUser = localStorage.getItem("lhb_username");
+    if (savedUser) {
+      showWelcome(savedUser);
+    } else {
+      showLoginBox();
+    }
+
+    function showWelcome(username) {
+      welcomeTxt.textContent = `${username}님 어서오세요!`;
+      loginBox.style.display = "none";
+      welcomeBox.style.display = "flex";
+    }
+
+    function showLoginBox() {
+      loginBox.style.display = "flex";
+      welcomeBox.style.display = "none";
+    }
+
+    loginBtn.addEventListener("click", async () => {
+      const loginId  = idInput.value.trim();
+      const password = pwInput.value.trim();
+
+      if (!loginId || !password) {
+        alert("ID와 비밀번호를 모두 입력해주세요.");
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:3000/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ loginId, password })
+        });
+
+        const data = await res.json();
+
+        if (data.ok) {
+          // username 기반으로만 저장/표시
+          const username = data.username || (data.user && data.user.username) || loginId;
+          localStorage.setItem("lhb_username", username);
+          showWelcome(username);
+        } else {
+          alert(data.message || "로그인에 실패했습니다.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("서버에 연결할 수 없습니다. server.js가 실행 중인지 확인해주세요!");
+      }
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("lhb_username");
+      idInput.value = "";
+      pwInput.value = "";
+      showLoginBox();
+    });
+  </script>
+</body>
+</html>
