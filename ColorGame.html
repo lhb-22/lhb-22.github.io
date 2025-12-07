@@ -177,7 +177,7 @@
       background: #ffffff;
       border: 1px solid #e2e8f0;
       box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
-      overflow-x: auto; /* 색판이 커져도 가로 스크롤로 해결 */
+      overflow-x: auto;
     }
 
     #game {
@@ -298,7 +298,7 @@
     </header>
 
     <main>
-      <!-- 위: 게임 영역 -->
+      <!-- 왼쪽: 게임 영역 -->
       <section class="left">
         <div class="left-title">색감 집중력 테스트</div>
         <div class="left-sub">
@@ -337,7 +337,7 @@
         <div id="resultMsg" class="result-msg"></div>
       </section>
 
-      <!-- 아래: 랭킹 영역 -->
+      <!-- 오른쪽: 랭킹 영역 -->
       <section class="right">
         <div class="right-title">전체 회원 색상 구별 랭킹 (Top 10)</div>
         <div class="right-sub">
@@ -400,16 +400,16 @@
     }
 
     // ==========================
-    // 🎮 게임 상태 변수
+    // 🎮 게임 상태
     // ==========================
     let level = 1;
     let score = 0;
     let timer = 5;
-    let countdown = null;
+    let countdownId = null;
     let isGameOver = false;
 
-    const gameEl   = document.getElementById("game");
-    const startBtn = document.getElementById("startBtn");
+    const gameEl       = document.getElementById("game");
+    const startBtn     = document.getElementById("startBtn");
     const scoreValueEl = document.getElementById("scoreValue");
     const timerValueEl = document.getElementById("timerValue");
     const levelValueEl = document.getElementById("levelValue");
@@ -417,7 +417,143 @@
     const rankBody     = document.getElementById("rankBody");
 
     // ==========================
-    // 📊 랭킹 불러오기
+    // 🎨 색상 유틸
+    // ==========================
+    function randomColor() {
+      const r = Math.floor(Math.random() * 120) + 80;
+      const g = Math.floor(Math.random() * 120) + 80;
+      const b = Math.floor(Math.random() * 120) + 80;
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function changeBrightness(color, diff) {
+      const [r, g, b] = color.match(/\d+/g).map(Number);
+      return `rgb(${Math.min(r + diff, 255)}, ${Math.min(g + diff, 255)}, ${Math.min(b + diff, 255)})`;
+    }
+
+    function clearCountdown() {
+      if (countdownId) {
+        clearInterval(countdownId);
+        countdownId = null;
+      }
+    }
+
+    // ==========================
+    // 🕹 게임 시작 / 라운드 생성
+    // ==========================
+    function startGame() {
+      level = 1;
+      score = 0;
+      timer = 5;
+      isGameOver = false;
+
+      scoreValueEl.textContent = `${score} 점`;
+      timerValueEl.textContent = `남은 시간: ${timer}초`;
+      levelValueEl.textContent = `${level} 단계`;
+      resultMsgEl.textContent = "";
+
+      clearCountdown();
+      makeGrid();
+    }
+
+    function makeGrid() {
+      if (isGameOver) return;
+
+      clearCountdown();
+      timer = 5;
+      timerValueEl.textContent = `남은 시간: ${timer}초`;
+      gameEl.innerHTML = "";
+
+      const size  = Math.min(2 + level, 7); // 최대 7 x 7
+      const total = size * size;
+      gameEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;
+
+      const baseColor  = randomColor();
+      const diff       = Math.max(40 - level * 3, 10); // 레벨 올라갈수록 차이↓
+      const diffColor  = changeBrightness(baseColor, diff);
+      const correctIdx = Math.floor(Math.random() * total);
+
+      for (let i = 0; i < total; i++) {
+        const block = document.createElement("div");
+        block.className = "block";
+        block.style.backgroundColor = (i === correctIdx) ? diffColor : baseColor;
+        block.addEventListener("click", () => handleClick(i === correctIdx));
+        gameEl.appendChild(block);
+      }
+
+      countdownId = setInterval(() => {
+        timer--;
+        timerValueEl.textContent = `남은 시간: ${timer}초`;
+        if (timer <= 0) {
+          clearCountdown();
+          resultMsgEl.textContent = "⏰ 시간 초과! 게임이 종료되었습니다.";
+          endGame();
+        }
+      }, 1000);
+    }
+
+    // ==========================
+    // ✅ 클릭 처리
+    // ==========================
+    function handleClick(isCorrect) {
+      if (isGameOver) return;
+      clearCountdown();
+
+      if (isCorrect) {
+        score += 10;
+        level += 1;
+        scoreValueEl.textContent = `${score} 점`;
+        levelValueEl.textContent = `${level} 단계`;
+        resultMsgEl.textContent = "정답입니다! 다음 단계로 넘어갑니다 ✨";
+        setTimeout(makeGrid, 700);
+      } else {
+        resultMsgEl.textContent = "❌ 틀렸어요! 게임이 종료되었습니다.";
+        endGame();
+      }
+    }
+
+    // ==========================
+    // 🏁 게임 종료 + 서버 저장
+    // ==========================
+    function endGame() {
+      isGameOver = true;
+      clearCountdown();
+      saveScoreToServer(score);
+    }
+
+    function saveScoreToServer(finalScore) {
+      const username = getLoginUsername();
+      if (!username) {
+        alert("로그인한 회원만 랭킹에 기록됩니다.\nGames 화면 상단에서 먼저 로그인해주세요!");
+        return;
+      }
+
+      fetch("http://localhost:3000/api/color/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: username,
+          score: finalScore
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.ok) {
+            console.error("색상게임 점수 저장 실패:", data);
+            alert("점수 저장에 실패했습니다. (서버 로그를 확인해주세요)");
+            return;
+          }
+          // 저장 성공 후 랭킹 새로고침
+          fetchColorRanking();
+        })
+        .catch(err => {
+          console.error(err);
+          alert("서버에 접속할 수 없습니다. server.js가 켜져 있는지 확인해주세요!");
+        });
+    }
+
+    // ==========================
+    // 📊 랭킹 가져오기
     // ==========================
     function fetchColorRanking() {
       fetch("http://localhost:3000/api/color/rank")
@@ -425,14 +561,14 @@
         .then(data => {
           if (!data.ok) {
             console.error("색상게임 랭킹 조회 실패:", data);
-            renderEmptyRanking("랭킹 정보를 불러오지 못했습니다.");
+            renderEmptyRanking();
             return;
           }
           renderRanking(data.rows || data.data || []);
         })
         .catch(err => {
           console.error(err);
-          renderEmptyRanking("서버 연결 오류로 랭킹을 불러오지 못했습니다.");
+          renderEmptyRanking("서버에 연결할 수 없습니다.");
         });
     }
 
@@ -471,146 +607,16 @@
       });
     }
 
-    // 처음 로딩 시 랭킹 한 번 불러오기
+    // ==========================
+    // 🎛 이벤트 연결 & 초기화
+    // ==========================
+    startBtn.addEventListener("click", () => {
+      startGame();
+    });
+
+    // 페이지 처음 로드될 때 랭킹 먼저 불러오기
     fetchColorRanking();
-
-    // ==========================
-    // 🕹 게임 시작
-    // ==========================
-    function startGame() {
-      level = 1;
-      score = 0;
-      timer = 5;
-      isGameOver = false;
-
-      scoreValueEl.textContent = `${score} 점`;
-      timerValueEl.textContent = `남은 시간: ${timer}초`;
-      levelValueEl.textContent = `${level} 단계`;
-      resultMsgEl.textContent = "";
-
-      clearInterval(countdown);
-      makeGrid();
-    }
-
-    // ==========================
-    // 🧩 새 라운드 만들기
-    // ==========================
-    function makeGrid() {
-      if (isGameOver) return;
-
-      clearInterval(countdown);
-      timer = 5;
-      timerValueEl.textContent = `남은 시간: ${timer}초`;
-      gameEl.innerHTML = "";
-
-      const size  = Math.min(2 + level, 7); // 최대 7x7
-      const total = size * size;
-      gameEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;
-
-      const baseColor  = randomColor();
-      const diff       = Math.max(40 - level * 3, 10); // 레벨 올라갈수록 색 차이 줄어듦
-      const diffColor  = changeBrightness(baseColor, diff);
-      const correctIdx = Math.floor(Math.random() * total);
-
-      for (let i = 0; i < total; i++) {
-        const block = document.createElement("div");
-        block.className = "block";
-        block.style.backgroundColor = (i === correctIdx) ? diffColor : baseColor;
-        block.addEventListener("click", () => checkAnswer(i === correctIdx));
-        gameEl.appendChild(block);
-      }
-
-      countdown = setInterval(() => {
-        timer--;
-        timerValueEl.textContent = `남은 시간: ${timer}초`;
-        if (timer <= 0) {
-          clearInterval(countdown);
-          resultMsgEl.textContent = "⏰ 시간 초과! 게임이 종료되었습니다.";
-          endGame();
-        }
-      }, 1000);
-    }
-
-    // ==========================
-    // ✅ 정답 체크
-    // ==========================
-    function checkAnswer(isCorrect) {
-      if (isGameOver) return;
-      clearInterval(countdown);
-
-      if (isCorrect) {
-        score += 10;
-        level += 1;
-        scoreValueEl.textContent = `${score} 점`;
-        levelValueEl.textContent = `${level} 단계`;
-        resultMsgEl.textContent = "정답입니다! 다음 단계로 넘어갑니다 ✨";
-        setTimeout(makeGrid, 700);
-      } else {
-        resultMsgEl.textContent = "❌ 틀렸어요! 게임이 종료되었습니다.";
-        endGame();
-      }
-    }
-
-    // ==========================
-    // 🏁 게임 종료 + 점수 저장
-    // ==========================
-    function endGame() {
-      isGameOver = true;
-      clearInterval(countdown);
-
-      saveScoreToServer(score);
-    }
-
-    function saveScoreToServer(finalScore) {
-      const username = getLoginUsername();
-      if (!username) {
-        alert("로그인한 회원만 랭킹에 기록됩니다.\nGames 화면 상단에서 먼저 로그인해주세요!");
-        return;
-      }
-
-      fetch("http://localhost:3000/api/color/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: username,
-          score: finalScore
-        })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (!data.ok) {
-            console.error("색상게임 점수 저장 실패:", data);
-            alert("점수 저장에 실패했습니다. (서버 로그를 확인해주세요)");
-            return;
-          }
-          // 저장 성공 후 랭킹 새로고침
-          fetchColorRanking();
-        })
-        .catch(err => {
-          console.error(err);
-          alert("서버에 접속할 수 없습니다. server.js가 켜져 있는지 확인해주세요!");
-        });
-    }
-
-    // ==========================
-    // 🎨 색상 유틸
-    // ==========================
-    function randomColor() {
-      const r = Math.floor(Math.random() * 120) + 80;
-      const g = Math.floor(Math.random() * 120) + 80;
-      const b = Math.floor(Math.random() * 120) + 80;
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    function changeBrightness(color, diff) {
-      const [r, g, b] = color.match(/\d+/g).map(Number);
-      return `rgb(${Math.min(r + diff, 255)}, ${Math.min(g + diff, 255)}, ${Math.min(b + diff, 255)})`;
-    }
-
-    // ==========================
-    // 🎛 이벤트 연결
-    // ==========================
-    startBtn.addEventListener("click", startGame);
   </script>
 </body>
 </html>
+
