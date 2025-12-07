@@ -3,66 +3,81 @@ name: LHB Web CI
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
+  # =========================
+  # 🔧 Backend CI (Node + 서버)
+  # =========================
   backend:
     name: Backend CI (Node + 서버)
     runs-on: ubuntu-latest
 
     steps:
+      # 1) 레포 코드 가져오기
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2) Node 18 사용
       - name: Use Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
+      # 3) 백엔드 의존성 설치 (서버용 package.json 기준)
       - name: Install backend deps
-        run: npm ci
+        run: npm install
 
-      # ✅ 테스트는 아직 없으니까 그냥 스킵 메시지만 찍고 통과시키기
-      - name: Skip backend tests (no tests yet)
-        run: echo "No backend tests yet – skipping."
-
-      # ✅ Dockerfile이 잘 빌드되는지만 확인 (푸시 X)
+      # 4) (선택) Docker 이미지 빌드가 잘 되는지만 체크
       - name: Build Docker image (check only)
         run: docker build -t lhb_web_server .
 
+  # ==========================================
+  # 🎨 Frontend CI + GitHub Pages 자동 배포
+  # ==========================================
   frontend:
     name: Frontend CI + GitHub Pages 배포
-    needs: backend
+    needs: backend          # 백엔드 CI 끝난 뒤 실행
     runs-on: ubuntu-latest
 
+    # GitHub Pages 배포를 위한 권한
     permissions:
       contents: read
       pages: write
       id-token: write
 
+    # 아래 run 명령은 전부 frontend 폴더 기준으로 실행
     defaults:
       run:
         working-directory: ./frontend
 
     steps:
+      # 1) 레포 코드 가져오기
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2) Node 18 사용
       - name: Use Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
+      # 3) 프론트엔드 의존성 설치
+      #    ⚠️ npm ci 말고 npm install 사용!
       - name: Install frontend deps
-        run: npm ci
+        run: npm install
 
+      # 4) React 빌드
       - name: Build frontend
         run: npm run build
 
+      # 5) 빌드 결과를 GitHub Pages 아티팩트로 업로드
       - name: Upload build artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./frontend/build
 
+      # 6) GitHub Pages로 배포
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
