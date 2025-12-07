@@ -4,10 +4,31 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
+const mongoose = require('mongoose');   // 💚 MongoDB
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
+// =====================
+// 💚 MongoDB 연결 (최신 버전 방식)
+// =====================
+mongoose.connect('mongodb://localhost:27017/lhb_web')
+  .then(() => console.log('💚 MongoDB 연결 성공! (lhb_web DB)'))
+  .catch(err => console.error('❌ MongoDB 연결 실패:', err));
+
+// =====================
+// 💚 게임 플레이 로그 스키마 (MongoDB)
+// =====================
+const gameLogSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  gameType: { type: String, enum: ['color', 'reaction', 'person'], required: true },
+  score: Number, // color / person 에서 사용
+  time: Number,  // reaction 에서 사용
+  createdAt: { type: Date, default: Date.now },
+});
+
+const GameLog = mongoose.model('GameLog', gameLogSchema);
 
 // =====================
 // 🔧 MySQL 연결 풀
@@ -15,14 +36,14 @@ app.use(bodyParser.json());
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: 'lhb0202',   // ★ MySQL root 비밀번호 맞게 수정
+  password: 'lhb0202',   // ★ MySQL root 비번
   database: 'lhb_web',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
 });
 
-// 시작할 때 연결 테스트
+// MySQL 연결 테스트
 (async () => {
   try {
     const conn = await pool.getConnection();
@@ -37,9 +58,8 @@ const pool = mysql.createPool({
 // ✅ 회원가입
 // =====================
 app.post('/api/signup', async (req, res) => {
-  const { username, loginId, password } = req.body;   // ← email 제거 완료
+  const { username, loginId, password } = req.body;
 
-  // 값 체크
   if (!username || !loginId || !password) {
     return res.json({ ok: false, message: '모든 값을 입력해주세요.' });
   }
@@ -48,16 +68,15 @@ app.post('/api/signup', async (req, res) => {
   try {
     conn = await pool.getConnection();
 
-    // loginId 중복 체크
     const [exists] = await conn.query(
       'SELECT id FROM users WHERE loginId = ?',
       [loginId]
     );
+
     if (exists.length > 0) {
       return res.json({ ok: false, message: '이미 사용 중인 ID입니다.' });
     }
 
-    // 이메일 제거했으므로 3개만 INSERT
     await conn.query(
       'INSERT INTO users (username, loginId, password) VALUES (?, ?, ?)',
       [username, loginId, password]
@@ -71,7 +90,6 @@ app.post('/api/signup', async (req, res) => {
     if (conn) conn.release();
   }
 });
-
 
 // =====================
 // ✅ 로그인
@@ -112,11 +130,10 @@ app.post('/api/login', async (req, res) => {
 });
 
 // =====================
-// 🎨 색상 구별 테스트 랭킹
-//  - color_ranking 테이블 (username UNIQUE)
+// 🎨 색상 구별 테스트 랭킹 (MySQL + MongoDB 로그)
 // =====================
 
-// 점수 저장 (높은 점수만 유지)
+// 점수 저장 (높은 점수만 유지) + 플레이 기록 누적 저장
 app.post('/api/color/save', async (req, res) => {
   const { username, score } = req.body;
 
@@ -128,24 +145,34 @@ app.post('/api/color/save', async (req, res) => {
   try {
     conn = await pool.getConnection();
 
-    // 기존 점수 조회
+    // --- MySQL 랭킹 로직 ---
     const [rows] = await conn.query(
       'SELECT score FROM color_ranking WHERE username = ?',
       [username]
     );
 
     if (rows.length === 0) {
-      // 첫 기록
       await conn.query(
         'INSERT INTO color_ranking (username, score) VALUES (?, ?)',
         [username, score]
       );
     } else if (score > rows[0].score) {
-      // 더 높은 점수면 갱신
       await conn.query(
         'UPDATE color_ranking SET score = ? WHERE username = ?',
         [score, username]
       );
+    }
+
+    // --- MongoDB 플레이 로그 누적 ---
+    try {
+      await GameLog.create({
+        username,
+        gameType: 'color',
+        score,
+      });
+    } catch (mongoErr) {
+      console.error('color game log error:', mongoErr);
+      // 로그는 실패해도 랭킹 응답은 정상 처리
     }
 
     res.json({ ok: true });
@@ -167,7 +194,6 @@ app.get('/api/color/rank', async (req, res) => {
       'SELECT username, score FROM color_ranking ORDER BY score DESC, created_at ASC LIMIT 10'
     );
 
-    // 반응속도처럼 rows 로 보내기
     res.json({ ok: true, rows });
   } catch (err) {
     console.error('color rank error:', err);
@@ -177,13 +203,11 @@ app.get('/api/color/rank', async (req, res) => {
   }
 });
 
-
 // =====================
-// ⚡ 반응 속도 테스트 랭킹
-//  - reaction_ranking 테이블 (username UNIQUE)
+// ⚡ 반응 속도 테스트 랭킹 (MySQL + MongoDB 로그)
 // =====================
 
-// 기록 저장 (더 빠른 time일 때만 갱신)
+// 기록 저장 (더 빠른 time일 때만 갱신) + 플레이 기록 누적 저장
 app.post('/api/reaction/save', async (req, res) => {
   const { username, time } = req.body;
 
@@ -195,6 +219,7 @@ app.post('/api/reaction/save', async (req, res) => {
   try {
     conn = await pool.getConnection();
 
+    // --- MySQL 랭킹 로직 ---
     const [rows] = await conn.query(
       'SELECT time FROM reaction_ranking WHERE username = ?',
       [username]
@@ -210,6 +235,17 @@ app.post('/api/reaction/save', async (req, res) => {
         'UPDATE reaction_ranking SET time = ? WHERE username = ?',
         [time, username]
       );
+    }
+
+    // --- MongoDB 플레이 로그 누적 ---
+    try {
+      await GameLog.create({
+        username,
+        gameType: 'reaction',
+        time,
+      });
+    } catch (mongoErr) {
+      console.error('reaction game log error:', mongoErr);
     }
 
     res.json({ ok: true });
@@ -241,11 +277,10 @@ app.get('/api/reaction/rank', async (req, res) => {
 });
 
 // =====================
-// 🧠 인물 맞추기 게임 랭킹
-//  - person_ranking 테이블 (username UNIQUE)
+// 🧠 인물 맞추기 게임 랭킹 (MySQL + MongoDB 로그)
 // =====================
 
-// 점수 저장 (더 높은 점수만 갱신)
+// 점수 저장 (더 높은 점수만 갱신) + 플레이 기록 누적 저장
 app.post('/api/person/submit', async (req, res) => {
   const { username, score } = req.body;
 
@@ -257,6 +292,7 @@ app.post('/api/person/submit', async (req, res) => {
   try {
     conn = await pool.getConnection();
 
+    // --- MySQL 랭킹 로직 ---
     const [rows] = await conn.query(
       'SELECT score FROM person_ranking WHERE username = ?',
       [username]
@@ -272,6 +308,17 @@ app.post('/api/person/submit', async (req, res) => {
         'UPDATE person_ranking SET score = ? WHERE username = ?',
         [score, username]
       );
+    }
+
+    // --- MongoDB 플레이 로그 누적 ---
+    try {
+      await GameLog.create({
+        username,
+        gameType: 'person',
+        score,
+      });
+    } catch (mongoErr) {
+      console.error('person game log error:', mongoErr);
     }
 
     res.json({ ok: true });
@@ -299,6 +346,32 @@ app.get('/api/person/ranking', async (req, res) => {
     res.json({ ok: false, message: '인물게임 랭킹 조회 중 오류가 발생했습니다.' });
   } finally {
     if (conn) conn.release();
+  }
+});
+
+// =====================
+// 💚 유저별 게임 플레이 기록 조회 (MongoDB)
+//  예) GET /api/logs/yeeeun
+//      GET /api/logs/yeeeun?gameType=color
+// =====================
+app.get('/api/logs/:username', async (req, res) => {
+  const { username } = req.params;
+  const { gameType } = req.query; // color / reaction / person
+
+  const filter = { username };
+  if (gameType) {
+    filter.gameType = gameType;
+  }
+
+  try {
+    const logs = await GameLog.find(filter)
+      .sort({ createdAt: -1 })        // 최근 기록부터
+      .limit(100);                    // 너무 많아지지 않게 제한
+
+    res.json({ ok: true, logs });
+  } catch (err) {
+    console.error('get logs error:', err);
+    res.json({ ok: false, message: '플레이 로그 조회 중 오류가 발생했습니다.' });
   }
 });
 
