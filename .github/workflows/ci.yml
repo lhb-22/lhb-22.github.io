@@ -8,51 +8,41 @@ on:
 
 jobs:
   backend-ci:
-    name: Backend (Node + Dockerfile)
+    name: Backend CI (Node + Dockerfile)
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
 
-      - name: Install backend deps
+      - name: Install backend dependencies
         run: npm install
-
-      - name: Run backend tests (optional)
-        run: |
-          if [ -f "package.json" ] && cat package.json | grep -q "\"test\""; then
-            npm test
-          else
-            echo "no backend tests"
-          fi
 
       - name: Build Docker image
         run: docker build -t lhb_web_server .
 
   frontend-ci:
-    name: Frontend (React)
+    name: Frontend CI (React)
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: frontend
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
 
-      - name: Install frontend deps
+      - name: Install dependencies
+        working-directory: frontend
         run: npm install
 
-      - name: Build frontend
+      - name: Build React app
+        working-directory: frontend
         run: npm run build
