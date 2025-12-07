@@ -71,7 +71,6 @@
       background-color: #5c2cff;
     }
 
-    /* 오른쪽 헤더 영역 (로그인 or 환영문구) */
     .header-right {
       min-width: 260px;
       display: flex;
@@ -114,7 +113,7 @@
       font-size: 13px;
       color: #5c2cff;
       font-weight: 700;
-      display: none; /* 로그인 전에는 숨김 */
+      display: none;
       align-items: center;
       justify-content: flex-end;
       gap: 8px;
@@ -137,7 +136,6 @@
       padding: 26px 40px 34px;
     }
 
-    /* LEFT: GAME NIGHT 카드 */
     .hero-card {
       background-color: #ffb6d9;
       border-radius: 18px;
@@ -169,7 +167,6 @@
       max-width: 270px;
     }
 
-    /* 고객센터 버튼 */
     .hero-start-btn {
       margin-top: 24px;
       border: 2px solid #5c2cff;
@@ -185,7 +182,6 @@
       box-shadow: 0 10px 18px rgba(92,44,255,0.15);
     }
 
-    /* 조이스틱 (왼쪽 카드 내부 오른쪽 아래) */
     .hero-joystick {
       position: absolute;
       right: -15px;
@@ -196,7 +192,6 @@
       pointer-events: none;
     }
 
-    /* RIGHT SIDE */
     .right-side {
       display: flex;
       flex-direction: column;
@@ -268,7 +263,6 @@
 
       <nav>
         <ul>
-          <!-- ✅ 여기만 수정: MyPage.html → index.html -->
           <li><a href="index.html">Home</a></li>
           <li><a href="portfolio.html" class="active">Games</a></li>
           <li><a href="signup.html">회원가입</a></li>
@@ -276,7 +270,6 @@
       </nav>
 
       <div class="header-right">
-        <!-- 로그인 박스 -->
         <div class="login-box" id="loginBox">
           <input type="text" id="loginIdInput" placeholder="Log in ID">
           <input type="password" id="loginPwInput" placeholder="Password">
@@ -284,7 +277,6 @@
           <a href="signup.html">회원가입</a>
         </div>
 
-        <!-- 로그인 후 보이는 환영 문구 -->
         <div class="welcome-box" id="welcomeBox">
           <span id="welcomeText"></span>
           <button class="logout-btn" id="logoutBtn">로그아웃</button>
@@ -340,6 +332,20 @@
             <a href="PersonGame.html" class="play-btn">Play</a>
           </div>
 
+          <!-- ⭐ 새로 추가: React 대시보드(게임 내역)로 이동 -->
+          <div class="game-card">
+            <div class="game-info">
+              <div class="game-name">📊 내 게임 기록 대시보드</div>
+              <div class="game-desc">
+                MongoDB에 누적된 내 게임 플레이 기록을 한눈에 확인합니다.
+              </div>
+            </div>
+            <!-- 지금은 React dev 서버 포트 3001로 연결 -->
+            <a href="http://localhost:3001" class="play-btn" target="_blank">
+              기록 보러가기
+            </a>
+          </div>
+
         </div>
       </section>
 
@@ -358,7 +364,6 @@
     const idInput    = document.getElementById("loginIdInput");
     const pwInput    = document.getElementById("loginPwInput");
 
-    // 이미 로그인한 적 있으면(브라우저에 저장) 바로 환영 문구 표시
     const savedUser = localStorage.getItem("lhb_username");
     if (savedUser) {
       showWelcome(savedUser);
@@ -396,7 +401,6 @@
         const data = await res.json();
 
         if (data.ok) {
-          // username 기반으로만 저장/표시
           const username = data.username || (data.user && data.user.username) || loginId;
           localStorage.setItem("lhb_username", username);
           showWelcome(username);
