@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lhb-web-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lhb-web-server
+  template:
+    metadata:
+      labels:
+        app: lhb-web-server
+    spec:
+      containers:
+        - name: lhb-web-container
+          image: lhb_web_server:latest      # 🔥 여기 이름은 방금 본 그 이름
+          imagePullPolicy: Never            # 🔥 로컬 이미지만 사용 (pull 안 함)
+          ports:
+            - containerPort: 3000
+          env:
+            - name: MYSQL_HOST
+              value: host.docker.internal
+            - name: MYSQL_USER
+              value: root
+            - name: MYSQL_PASSWORD
+              value: lhb0202
+            - name: MYSQL_DATABASE
+              value: lhb_web
+            - name: MONGO_URL
+              value: mongodb://host.docker.internal:27017/lhb_web
