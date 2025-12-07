@@ -4,7 +4,7 @@ import * as tf from '@tensorflow/tfjs';
 function App() {
   const [username, setUsername] = useState('');
   const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [skillScore, setSkillScore] = useState(null);
   const [tfStatus, setTfStatus] = useState('');
