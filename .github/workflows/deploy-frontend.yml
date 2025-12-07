@@ -2,37 +2,47 @@ name: Deploy Frontend to GitHub Pages
 
 on:
   push:
-    branches: [ "main" ]
-    paths:
-      - "frontend/**"
-      - ".github/workflows/deploy-frontend.yml"
+    branches:
+      - main
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Use Node.js 18
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install deps
-        working-directory: frontend
-        run: npm ci
+      - name: Install frontend deps
+        run: npm install
+        working-directory: ./frontend
 
-      - name: Build
-        working-directory: frontend
+      - name: Build frontend
         run: npm run build
+        working-directory: ./frontend
 
-      # 여기서부터는 선택(React build 결과를 gh-pages 브랜치로 배포)
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload production-ready files
+        uses: actions/upload-pages-artifact@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: frontend/build
+          path: ./frontend/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
