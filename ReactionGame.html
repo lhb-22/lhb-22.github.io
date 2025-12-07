@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>🎨 색상 구별 테스트</title>
+  <title>⚡ 반응 속도 테스트</title>
   <style>
     * {
       box-sizing: border-box;
@@ -31,10 +31,9 @@
       overflow: hidden;
     }
 
-    /* 헤더 */
     header {
       padding: 18px 26px 14px;
-      background: linear-gradient(120deg, #93c5fd, #a5b4fc, #d8b4fe);
+      background: linear-gradient(120deg, #60a5fa, #818cf8, #c4b5fd);
       color: #ffffff;
       box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
     }
@@ -62,16 +61,20 @@
     .header-login-info {
       font-size: 12px;
       opacity: 0.9;
-      text-align: right;
     }
 
-    /* 메인 레이아웃: 위 게임 / 아래 랭킹 */
     main {
       padding: 22px 26px 18px;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
       gap: 20px;
       align-items: stretch;
+    }
+
+    @media (max-width: 800px) {
+      main {
+        grid-template-columns: 1fr;
+      }
     }
 
     .left, .right {
@@ -82,7 +85,6 @@
       border: 1px solid #e2e8f0;
     }
 
-    /* 왼쪽(위쪽): 게임 영역 */
     .left-title {
       font-size: 18px;
       font-weight: 700;
@@ -95,55 +97,87 @@
       margin-bottom: 14px;
     }
 
-    .status-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .status-pill {
-      flex: 1;
-      min-width: 120px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #eef2ff;
-      border: 1px solid #d4ddff;
-      font-size: 13px;
+    /* 신호등 영역 */
+    .traffic-wrapper {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      align-items: center;
+      gap: 12px;
+      margin-top: 6px;
     }
 
-    .status-label {
-      font-size: 11px;
-      color: #6b7280;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+    .traffic-body {
+      width: 70px;
+      padding: 10px 0;
+      border-radius: 999px;
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 16px 30px rgba(15, 23, 42, 0.5);
     }
 
-    .status-value {
+    .light {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: #111827;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+      transition: 0.2s;
+    }
+
+    .light.red-on {
+      background: #ef4444;
+      box-shadow: 0 0 12px rgba(239,68,68,0.8);
+    }
+
+    .light.yellow-on {
+      background: #facc15;
+      box-shadow: 0 0 12px rgba(250,204,21,0.8);
+    }
+
+    .light.green-on {
+      background: #22c55e;
+      box-shadow: 0 0 12px rgba(34,197,94,0.9);
+    }
+
+    .status-text {
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 600;
+      margin-top: 4px;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    .status-text.wait {
+      color: #f97316;
+    }
+
+    .status-text.ready {
+      color: #22c55e;
+    }
+
+    .status-text.too-early {
+      color: #ef4444;
+    }
+
+    .status-text.result {
       color: #4f46e5;
     }
 
-    .top-controls {
+    .btn-row {
+      margin-top: 16px;
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
       gap: 10px;
-      margin-top: 4px;
-      margin-bottom: 10px;
-    }
-
-    .top-desc {
-      font-size: 13px;
-      color: #6b7280;
+      justify-content: center;
     }
 
     button {
       font-size: 14px;
-      padding: 9px 18px;
+      padding: 10px 18px;
       border-radius: 999px;
       border: 1px solid #4f46e5;
       background: #4f46e5;
@@ -153,7 +187,13 @@
       transition: 0.18s;
       box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
       min-width: 140px;
-      align-self: flex-start;
+    }
+
+    button.secondary {
+      border-color: #9ca3af;
+      background: #e5e7eb;
+      color: #374151;
+      box-shadow: none;
     }
 
     button:disabled {
@@ -169,51 +209,21 @@
       box-shadow: 0 12px 24px rgba(67, 56, 202, 0.35);
     }
 
-    /* 게임 박스 */
-    #game-wrapper {
-      margin-top: 10px;
-      padding: 16px 18px 20px;
-      border-radius: 22px;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
-      overflow-x: auto;
+    button.secondary:hover:not(:disabled) {
+      background: #d1d5db;
+      box-shadow: 0 6px 12px rgba(148, 163, 184, 0.5);
     }
 
-    #game {
-      display: grid;
-      justify-content: center;
-      margin: 10px auto 4px;
-      gap: 8px;
-      width: fit-content;
-      min-height: 220px;
-      padding: 10px;
-    }
-
-    .block {
-      width: 60px;
-      height: 60px;
-      border-radius: 14px;
-      cursor: pointer;
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
-      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
-    }
-
-    .block:hover {
-      transform: translateY(-2px) scale(1.03);
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.28);
-    }
-
-    .result-msg {
-      margin-top: 8px;
-      font-size: 14px;
+    .result-line {
+      margin-top: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: #4f46e5;
-      min-height: 20px;
-      text-align: left;
+      min-height: 22px;
+      text-align: center;
     }
 
-    /* 아래쪽: 랭킹 */
+    /* 오른쪽: 랭킹 */
     .right-title {
       font-size: 16px;
       font-weight: 700;
@@ -224,19 +234,6 @@
       font-size: 12px;
       color: #6b7280;
       margin-bottom: 10px;
-    }
-
-    .tag-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: #eef2ff;
-      color: #4f46e5;
-      margin-top: 4px;
-      margin-bottom: 8px;
     }
 
     table {
@@ -271,6 +268,18 @@
       padding: 10px 0;
     }
 
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4f46e5;
+      margin-top: 6px;
+    }
+
     footer {
       padding: 10px 18px 16px;
       background: rgba(248, 249, 255, 0.9);
@@ -286,9 +295,9 @@
     <header>
       <div class="header-title">
         <div class="header-left">
-          <div>🎨 색상 구별 테스트</div>
+          <div>⚡ 반응 속도 테스트</div>
           <div class="header-sub">
-            비슷한 색들 중에서 <strong>하나만 다른 색</strong>을 찾아 클릭해보세요!
+            신호등이 <strong>초록색</strong>으로 바뀌는 순간, 최대한 빨리 버튼을 눌러보세요!
           </div>
         </div>
         <div class="header-login-info" id="loginInfo">
@@ -300,53 +309,41 @@
     <main>
       <!-- 왼쪽: 게임 영역 -->
       <section class="left">
-        <div class="left-title">색감 집중력 테스트</div>
+        <div class="left-title">실시간 반응 속도 측정</div>
         <div class="left-sub">
-          <strong>게임 시작</strong> 버튼을 누르면 여러 개의 색 블록이 나타납니다.<br>
-          그 중 <strong>한 칸만 살짝 다른 색</strong>을 찾아 클릭하면 점수가 올라가요.
+          <strong>시작하기</strong> 버튼을 누르면 잠시 후 신호등이 바뀝니다.<br>
+          초록색 불이 켜진 뒤에 <strong>반응하기</strong> 버튼을 클릭하면 반응 시간이 기록됩니다.
         </div>
 
-        <!-- 점수 / 타이머 / 레벨 -->
-        <div class="status-bar">
-          <div class="status-pill">
-            <div class="status-label">SCORE</div>
-            <div class="status-value" id="scoreValue">0 점</div>
+        <div class="traffic-wrapper">
+          <div class="traffic-body">
+            <div id="light-red" class="light red-on"></div>
+            <div id="light-yellow" class="light"></div>
+            <div id="light-green" class="light"></div>
           </div>
-          <div class="status-pill">
-            <div class="status-label">TIMER</div>
-            <div class="status-value" id="timerValue">남은 시간: 5초</div>
-          </div>
-          <div class="status-pill">
-            <div class="status-label">LEVEL</div>
-            <div class="status-value" id="levelValue">1 단계</div>
+          <div id="statusText" class="status-text">
+            대기 중입니다. [시작하기]를 눌러주세요.
           </div>
         </div>
 
-        <div class="top-controls">
-          <p class="top-desc">
-            레벨이 올라갈수록 칸 개수가 많아지고, 색 차이가 점점 더 미묘해집니다.<br>
-            제한 시간 안에 다른 색을 못 찾거나 틀리면 게임이 종료됩니다.
-          </p>
-          <button id="startBtn">게임 시작 💫</button>
+        <div class="btn-row">
+          <button id="startBtn">시작하기 🚦</button>
+          <button id="reactBtn" class="secondary" disabled>반응하기 🔘</button>
         </div>
 
-        <div id="game-wrapper">
-          <div id="game"></div>
-        </div>
-
-        <div id="resultMsg" class="result-msg"></div>
+        <div id="resultLine" class="result-line"></div>
       </section>
 
       <!-- 오른쪽: 랭킹 영역 -->
       <section class="right">
-        <div class="right-title">전체 회원 색상 구별 랭킹 (Top 10)</div>
+        <div class="right-title">전체 회원 반응 속도 랭킹 (Top 10)</div>
         <div class="right-sub">
-          로그인한 회원의 점수가 서버에 저장되고,<br>
-          모든 회원과 색상 구별 실력을 겨룰 수 있습니다.
+          로그인한 회원의 기록이 서버에 저장되고,<br>
+          모든 회원과 함께 반응 속도를 겨룰 수 있습니다.
         </div>
 
         <div class="tag-chip">
-          <span>🏆</span> 점수가 높을수록 상위에 표시됩니다.
+          <span>🏁</span> 기록 단위: 초 (s), 낮을수록 빠름
         </div>
 
         <table>
@@ -354,7 +351,7 @@
             <tr>
               <th>순위</th>
               <th>닉네임</th>
-              <th>점수</th>
+              <th>기록 (s)</th>
             </tr>
           </thead>
           <tbody id="rankBody">
@@ -365,7 +362,7 @@
     </main>
 
     <footer>
-      2301464 이현빈 · Color Vision Mini Game 🎮
+      2301464 이현빈 · Reaction Time Mini Game 🎮
     </footer>
   </div>
 
@@ -400,151 +397,133 @@
     }
 
     // ==========================
-    // 🎮 게임 상태
+    // ⏱ 게임 상태
     // ==========================
-    let level = 1;
-    let score = 0;
-    let timer = 5;
-    let countdownId = null;
-    let isGameOver = false;
+    let state = "idle"; // idle | waiting | ready | finished
+    let greenTime = 0;
+    let timeoutId = null;
 
-    const gameEl       = document.getElementById("game");
-    const startBtn     = document.getElementById("startBtn");
-    const scoreValueEl = document.getElementById("scoreValue");
-    const timerValueEl = document.getElementById("timerValue");
-    const levelValueEl = document.getElementById("levelValue");
-    const resultMsgEl  = document.getElementById("resultMsg");
-    const rankBody     = document.getElementById("rankBody");
+    // DOM 요소
+    const lightRed   = document.getElementById("light-red");
+    const lightYellow= document.getElementById("light-yellow");
+    const lightGreen = document.getElementById("light-green");
+    const statusText = document.getElementById("statusText");
+    const startBtn   = document.getElementById("startBtn");
+    const reactBtn   = document.getElementById("reactBtn");
+    const resultLine = document.getElementById("resultLine");
+    const rankBody   = document.getElementById("rankBody");
 
     // ==========================
-    // 🎨 색상 유틸
+    // 💡 신호등 제어
     // ==========================
-    function randomColor() {
-      const r = Math.floor(Math.random() * 120) + 80;
-      const g = Math.floor(Math.random() * 120) + 80;
-      const b = Math.floor(Math.random() * 120) + 80;
-      return `rgb(${r}, ${g}, ${b})`;
+    function resetLights() {
+      lightRed.className    = "light";
+      lightYellow.className = "light";
+      lightGreen.className  = "light";
     }
 
-    function changeBrightness(color, diff) {
-      const [r, g, b] = color.match(/\d+/g).map(Number);
-      return `rgb(${Math.min(r + diff, 255)}, ${Math.min(g + diff, 255)}, ${Math.min(b + diff, 255)})`;
+    function setLightsRed() {
+      resetLights();
+      lightRed.classList.add("red-on");
     }
 
-    function clearCountdown() {
-      if (countdownId) {
-        clearInterval(countdownId);
-        countdownId = null;
-      }
+    function setLightsYellow() {
+      resetLights();
+      lightYellow.classList.add("yellow-on");
+    }
+
+    function setLightsGreen() {
+      resetLights();
+      lightGreen.classList.add("green-on");
     }
 
     // ==========================
-    // 🕹 게임 시작 / 라운드 생성
+    // 🕹 게임 시작 로직
     // ==========================
     function startGame() {
-      level = 1;
-      score = 0;
-      timer = 5;
-      isGameOver = false;
+      if (state === "waiting" || state === "ready") return;
 
-      scoreValueEl.textContent = `${score} 점`;
-      timerValueEl.textContent = `남은 시간: ${timer}초`;
-      levelValueEl.textContent = `${level} 단계`;
-      resultMsgEl.textContent = "";
+      state = "waiting";
+      resultLine.textContent = "";
+      setLightsRed();
+      reactBtn.disabled = false;
+      reactBtn.classList.remove("secondary");
+      statusText.textContent = "잠시 기다리세요... 아직 누르면 안 돼요!";
+      statusText.className = "status-text wait";
 
-      clearCountdown();
-      makeGrid();
+      const delay = 1500 + Math.random() * 2500;
+
+      timeoutId = setTimeout(() => {
+        state = "ready";
+        setLightsGreen();
+        statusText.textContent = "지금! 초록불일 때 빨리 누르세요!";
+        statusText.className = "status-text ready";
+        greenTime = performance.now();
+      }, delay);
     }
 
-    function makeGrid() {
-      if (isGameOver) return;
-
-      clearCountdown();
-      timer = 5;
-      timerValueEl.textContent = `남은 시간: ${timer}초`;
-      gameEl.innerHTML = "";
-
-      const size  = Math.min(2 + level, 7); // 최대 7 x 7
-      const total = size * size;
-      gameEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;
-
-      const baseColor  = randomColor();
-      const diff       = Math.max(40 - level * 3, 10); // 레벨 올라갈수록 차이↓
-      const diffColor  = changeBrightness(baseColor, diff);
-      const correctIdx = Math.floor(Math.random() * total);
-
-      for (let i = 0; i < total; i++) {
-        const block = document.createElement("div");
-        block.className = "block";
-        block.style.backgroundColor = (i === correctIdx) ? diffColor : baseColor;
-        block.addEventListener("click", () => handleClick(i === correctIdx));
-        gameEl.appendChild(block);
+    // ==========================
+    // 🖱 반응 버튼 클릭
+    // ==========================
+    function onReact() {
+      if (state === "waiting") {
+        clearTimeout(timeoutId);
+        state = "finished";
+        setLightsYellow();
+        statusText.textContent = "너무 성급했어요! 😅 다시 시도해볼까요?";
+        statusText.className = "status-text too-early";
+        resultLine.textContent = "";
+        reactBtn.disabled = true;
+        reactBtn.classList.add("secondary");
+        return;
       }
 
-      countdownId = setInterval(() => {
-        timer--;
-        timerValueEl.textContent = `남은 시간: ${timer}초`;
-        if (timer <= 0) {
-          clearCountdown();
-          resultMsgEl.textContent = "⏰ 시간 초과! 게임이 종료되었습니다.";
-          endGame();
-        }
-      }, 1000);
-    }
+      if (state === "ready") {
+        const now = performance.now();
+        const diffMs = now - greenTime;
+        const diffSec = diffMs / 1000;
+        const formatted = diffSec.toFixed(3);
 
-    // ==========================
-    // ✅ 클릭 처리
-    // ==========================
-    function handleClick(isCorrect) {
-      if (isGameOver) return;
-      clearCountdown();
+        state = "finished";
+        statusText.textContent = "측정 완료!";
+        statusText.className = "status-text result";
 
-      if (isCorrect) {
-        score += 10;
-        level += 1;
-        scoreValueEl.textContent = `${score} 점`;
-        levelValueEl.textContent = `${level} 단계`;
-        resultMsgEl.textContent = "정답입니다! 다음 단계로 넘어갑니다 ✨";
-        setTimeout(makeGrid, 700);
-      } else {
-        resultMsgEl.textContent = "❌ 틀렸어요! 게임이 종료되었습니다.";
-        endGame();
+        resultLine.textContent = `반응 속도: ${formatted} 초`;
+
+        saveRecordToServer(diffSec);
+
+        reactBtn.disabled = true;
+        reactBtn.classList.add("secondary");
+        return;
       }
     }
 
     // ==========================
-    // 🏁 게임 종료 + 서버 저장
+    // 🗂 서버로 기록 저장
     // ==========================
-    function endGame() {
-      isGameOver = true;
-      clearCountdown();
-      saveScoreToServer(score);
-    }
-
-    function saveScoreToServer(finalScore) {
-      const username = getLoginUsername();
-      if (!username) {
+    function saveRecordToServer(timeSec) {
+      loginUsername = getLoginUsername();
+      if (!loginUsername) {
         alert("로그인한 회원만 랭킹에 기록됩니다.\nGames 화면 상단에서 먼저 로그인해주세요!");
         return;
       }
 
-      fetch("http://localhost:3000/api/color/submit", {
+      fetch("http://localhost:3000/api/reaction/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: username,
-          score: finalScore
+          username: loginUsername,
+          time: timeSec
         })
       })
         .then(res => res.json())
         .then(data => {
           if (!data.ok) {
-            console.error("색상게임 점수 저장 실패:", data);
-            alert("점수 저장에 실패했습니다. (서버 로그를 확인해주세요)");
+            console.error("기록 저장 실패:", data);
+            alert("기록 저장에 실패했습니다. (서버 로그를 확인해주세요)");
             return;
           }
-          // 저장 성공 후 랭킹 새로고침
-          fetchColorRanking();
+          fetchReactionRanking();
         })
         .catch(err => {
           console.error(err);
@@ -555,15 +534,16 @@
     // ==========================
     // 📊 랭킹 가져오기
     // ==========================
-    function fetchColorRanking() {
-      fetch("http://localhost:3000/api/color/rank")
+    function fetchReactionRanking() {
+      fetch("http://localhost:3000/api/reaction/rank")
         .then(res => res.json())
         .then(data => {
           if (!data.ok) {
-            console.error("색상게임 랭킹 조회 실패:", data);
+            console.error("랭킹 조회 실패:", data);
             renderEmptyRanking();
             return;
           }
+          // 🔥 서버가 rows로 보내주니까 rows 기준으로 읽기
           renderRanking(data.rows || data.data || []);
         })
         .catch(err => {
@@ -578,14 +558,14 @@
       const td = document.createElement("td");
       td.colSpan = 3;
       td.className = "empty-row";
-      td.textContent = msg || "아직 랭킹 데이터가 없습니다. 게임을 시작해보세요!";
+      td.textContent = msg || "아직 기록이 없습니다. 게임을 시작해보세요!";
       tr.appendChild(td);
       rankBody.appendChild(tr);
     }
 
     function renderRanking(list) {
       rankBody.innerHTML = "";
-      if (!list || list.length === 0) {
+      if (!list.length) {
         renderEmptyRanking();
         return;
       }
@@ -594,15 +574,15 @@
         const tr = document.createElement("tr");
         const rankTd = document.createElement("td");
         const userTd = document.createElement("td");
-        const scoreTd = document.createElement("td");
+        const timeTd = document.createElement("td");
 
-        rankTd.textContent  = idx + 1;
-        userTd.textContent  = row.username;
-        scoreTd.textContent = row.score;
+        rankTd.textContent = idx + 1;
+        userTd.textContent = row.username;
+        timeTd.textContent = Number(row.time).toFixed(3);
 
         tr.appendChild(rankTd);
         tr.appendChild(userTd);
-        tr.appendChild(scoreTd);
+        tr.appendChild(timeTd);
         rankBody.appendChild(tr);
       });
     }
@@ -611,11 +591,23 @@
     // 🎛 이벤트 연결 & 초기화
     // ==========================
     startBtn.addEventListener("click", () => {
-      startGame();
+      clearTimeout(timeoutId);
+      state = "idle";
+      setLightsRed();
+      statusText.textContent = "준비 중...";
+      statusText.className = "status-text";
+      reactBtn.disabled = true;
+      reactBtn.classList.add("secondary");
+
+      setTimeout(startGame, 300);
     });
 
-    // 페이지 처음 로드될 때 랭킹 먼저 불러오기
-    fetchColorRanking();
+    reactBtn.addEventListener("click", onReact);
+
+    setLightsRed();
+    reactBtn.disabled = true;
+    reactBtn.classList.add("secondary");
+    fetchReactionRanking();
   </script>
 </body>
 </html>
