@@ -12,7 +12,7 @@
 
     body {
       font-family: 'Pretendard', sans-serif;
-      background-color: #bba7e3; /* 톤다운 보라 */
+      background-color: #bba7e3;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -86,9 +86,11 @@
       box-shadow: 0 0 0 2px rgba(92,44,255,0.12);
     }
 
-    .helper {
+    .error {
       font-size: 11px;
-      color: #999;
+      color: #d63333;
+      margin-top: 2px;
+      display: none;
     }
 
     .signup-btn {
@@ -109,6 +111,14 @@
       filter: brightness(1.05);
     }
 
+    .success-msg {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #16a34a;
+      display: none;
+      text-align: center;
+    }
+
     .bottom-text {
       margin-top: 12px;
       text-align: center;
@@ -118,27 +128,12 @@
 
     .bottom-text a {
       color: #5c2cff;
-      text-decoration: none;
       font-weight: 600;
+      text-decoration: none;
     }
 
     .bottom-text a:hover {
       text-decoration: underline;
-    }
-
-    .error {
-      font-size: 11px;
-      color: #d63333;
-      margin-top: 2px;
-      display: none;
-    }
-
-    .success-msg {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #16a34a;
-      display: none;
-      text-align: center;
     }
   </style>
 </head>
@@ -153,23 +148,22 @@
 
     <form id="signupForm">
 
-      <!-- 닉네임 (username) -->
+      <!-- 닉네임 -->
       <div class="field-group">
         <label for="usernameInput">닉네임</label>
         <input id="usernameInput" type="text" placeholder="게임에서 사용할 이름" required>
       </div>
 
-      <!-- 로그인 ID (loginId) -->
+      <!-- 로그인 ID -->
       <div class="field-group">
         <label for="loginIdInput">로그인 ID</label>
-        <input id="loginIdInput" type="text" placeholder="로그인에 사용할 ID를 입력하세요" required>
+        <input id="loginIdInput" type="text" placeholder="로그인에 사용할 ID" required>
       </div>
 
       <!-- 비밀번호 -->
       <div class="field-group">
         <label for="passwordInput">비밀번호</label>
         <input id="passwordInput" type="password" placeholder="비밀번호를 입력하세요" required>
-        <div class="helper">영문/숫자 조합 8자 이상을 추천합니다.</div>
       </div>
 
       <!-- 비밀번호 확인 -->
@@ -185,7 +179,7 @@
 
     <div class="bottom-text">
       이미 계정이 있나요?
-      <a href="MyPage.html">로그인 하러 가기</a>
+      <a href="portfolio.html">로그인 하러 가기</a>
     </div>
 
   </div>
@@ -207,30 +201,28 @@
       const password = passwordInput.value.trim();
       const password2= password2Input.value.trim();
 
-      // 1) 비밀번호 확인
+      // 비밀번호 일치 검사
       if (password !== password2) {
         pwError.style.display = "block";
         successMsg.style.display = "none";
-        password2Input.focus();
         return;
       } else {
         pwError.style.display = "none";
       }
 
-      // 2) 빈 값 체크 (프론트에서도 한 번 더)
+      // 빈 값 체크
       if (!username || !loginId || !password) {
-        alert("닉네임, 로그인 ID, 비밀번호를 모두 입력해주세요.");
+        alert("모든 값을 입력해주세요.");
         return;
       }
 
       try {
-        // 3) 서버로 회원가입 요청
         const res = await fetch("http://localhost:3000/api/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             username: username,
-            loginId: loginId,
+            loginId:  loginId,
             password: password
           })
         });
@@ -239,16 +231,15 @@
 
         if (data.ok) {
           successMsg.style.display = "block";
-          alert("회원가입이 완료되었습니다! 이제 Games 화면에서 로그인해보세요 😊");
+          alert("회원가입이 완료되었습니다! 🎉");
           form.reset();
         } else {
           successMsg.style.display = "none";
-          alert(data.message || "회원가입 중 오류가 발생했습니다.");
+          alert(data.message || "회원가입 오류가 발생했습니다.");
         }
       } catch (err) {
         console.error(err);
-        successMsg.style.display = "none";
-        alert("서버에 연결할 수 없습니다. server.js가 켜져 있는지 확인해주세요!");
+        alert("서버에 연결할 수 없습니다. server.js 실행 여부를 확인해주세요!");
       }
     });
   </script>
