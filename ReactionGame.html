@@ -371,11 +371,9 @@
     // 🔑 로그인 정보 읽기
     // ==========================
     function getLoginUsername() {
-      // Games(portfolio.html)에서 저장한 값
-      const nameFromSimple = localStorage.getItem("lhb_username");
-      if (nameFromSimple) return nameFromSimple;
+      const simple = localStorage.getItem("lhb_username");
+      if (simple) return simple;
 
-      // 혹시 상세 정보로 저장된 경우도 대비
       const raw = localStorage.getItem("lhb_loginUser");
       if (raw) {
         try {
@@ -394,7 +392,8 @@
     if (loginUsername) {
       loginInfoEl.textContent = `${loginUsername}님 로그인 중`;
     } else {
-      loginInfoEl.textContent = "로그인하지 않은 상태입니다 (Games 화면에서 로그인하면 랭킹에 기록됩니다)";
+      loginInfoEl.textContent =
+        "로그인하지 않은 상태입니다 (Games 화면에서 로그인하면 랭킹에 기록됩니다)";
     }
 
     // ==========================
@@ -452,7 +451,6 @@
       statusText.textContent = "잠시 기다리세요... 아직 누르면 안 돼요!";
       statusText.className = "status-text wait";
 
-      // 랜덤 딜레이 (1.5 ~ 4초 사이)
       const delay = 1500 + Math.random() * 2500;
 
       timeoutId = setTimeout(() => {
@@ -469,7 +467,6 @@
     // ==========================
     function onReact() {
       if (state === "waiting") {
-        // 너무 빨리 누름
         clearTimeout(timeoutId);
         state = "finished";
         setLightsYellow();
@@ -493,15 +490,10 @@
 
         resultLine.textContent = `반응 속도: ${formatted} 초`;
 
-        // 👉 서버에 기록 저장 시도
         saveRecordToServer(diffSec);
 
         reactBtn.disabled = true;
         reactBtn.classList.add("secondary");
-        return;
-      }
-
-      if (state === "idle" || state === "finished") {
         return;
       }
     }
@@ -510,7 +502,7 @@
     // 🗂 서버로 기록 저장
     // ==========================
     function saveRecordToServer(timeSec) {
-      loginUsername = getLoginUsername(); // 혹시 로그인 상태가 바뀌었을지도 모르니 다시 확인
+      loginUsername = getLoginUsername();
       if (!loginUsername) {
         alert("로그인한 회원만 랭킹에 기록됩니다.\nGames 화면 상단에서 먼저 로그인해주세요!");
         return;
@@ -527,11 +519,10 @@
         .then(res => res.json())
         .then(data => {
           if (!data.ok) {
-            console.error("저장 실패:", data);
+            console.error("기록 저장 실패:", data);
             alert("기록 저장에 실패했습니다. (서버 로그를 확인해주세요)");
             return;
           }
-          // 저장 성공 후 랭킹 새로고침
           fetchReactionRanking();
         })
         .catch(err => {
@@ -552,7 +543,8 @@
             renderEmptyRanking();
             return;
           }
-          renderRanking(data.data || []);
+          // 🔥 서버가 rows로 보내주니까 rows 기준으로 읽기
+          renderRanking(data.rows || data.data || []);
         })
         .catch(err => {
           console.error(err);
@@ -612,7 +604,6 @@
 
     reactBtn.addEventListener("click", onReact);
 
-    // 초기 상태
     setLightsRed();
     reactBtn.disabled = true;
     reactBtn.classList.add("secondary");
