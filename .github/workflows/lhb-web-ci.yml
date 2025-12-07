@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  # =========================
+  # ========================
   # 🔧 Backend CI (Node + 서버)
-  # =========================
+  # ========================
   backend:
     name: Backend CI (Node + 서버)
     runs-on: ubuntu-latest
