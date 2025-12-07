@@ -371,10 +371,22 @@
 
   <script>
     // ==========================
-    // 🔑 로그인 정보 읽기 (PersonGame 방식)
+    // 🔑 로그인 정보 읽기
     // ==========================
     function getLoginUsername() {
-      return localStorage.getItem("lhb_username") || null;
+      const simple = localStorage.getItem("lhb_username");
+      if (simple) return simple;
+
+      const raw = localStorage.getItem("lhb_loginUser");
+      if (raw) {
+        try {
+          const obj = JSON.parse(raw);
+          return obj.username || obj.loginId || null;
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
     }
 
     const loginInfoEl = document.getElementById("loginInfo");
@@ -390,14 +402,14 @@
     // ==========================
     // 🎮 게임 상태 변수
     // ==========================
-    let level      = 1;
-    let score      = 0;
-    let timer      = 5;
-    let countdown  = null;
+    let level = 1;
+    let score = 0;
+    let timer = 5;
+    let countdown = null;
     let isGameOver = false;
 
-    const gameEl       = document.getElementById("game");
-    const startBtn     = document.getElementById("startBtn");
+    const gameEl   = document.getElementById("game");
+    const startBtn = document.getElementById("startBtn");
     const scoreValueEl = document.getElementById("scoreValue");
     const timerValueEl = document.getElementById("timerValue");
     const levelValueEl = document.getElementById("levelValue");
@@ -405,11 +417,25 @@
     const rankBody     = document.getElementById("rankBody");
 
     // ==========================
-    // 🏆 랭킹 관련
-    //  - server.js 기준:
-    //      GET  /api/color/rank
-    //      POST /api/color/submit   (점수 저장)
+    // 📊 랭킹 불러오기
     // ==========================
+    function fetchColorRanking() {
+      fetch("http://localhost:3000/api/color/rank")
+        .then(res => res.json())
+        .then(data => {
+          if (!data.ok) {
+            console.error("색상게임 랭킹 조회 실패:", data);
+            renderEmptyRanking("랭킹 정보를 불러오지 못했습니다.");
+            return;
+          }
+          renderRanking(data.rows || data.data || []);
+        })
+        .catch(err => {
+          console.error(err);
+          renderEmptyRanking("서버 연결 오류로 랭킹을 불러오지 못했습니다.");
+        });
+    }
+
     function renderEmptyRanking(msg) {
       rankBody.innerHTML = "";
       const tr = document.createElement("tr");
@@ -429,9 +455,9 @@
       }
 
       list.forEach((row, idx) => {
-        const tr      = document.createElement("tr");
-        const rankTd  = document.createElement("td");
-        const userTd  = document.createElement("td");
+        const tr = document.createElement("tr");
+        const rankTd = document.createElement("td");
+        const userTd = document.createElement("td");
         const scoreTd = document.createElement("td");
 
         rankTd.textContent  = idx + 1;
@@ -445,41 +471,22 @@
       });
     }
 
-    async function fetchColorRanking() {
-      try {
-        const res  = await fetch("http://localhost:3000/api/color/rank");
-        const data = await res.json();
-
-        if (!data.ok) {
-          console.error("색상게임 랭킹 조회 실패:", data);
-          renderEmptyRanking("랭킹 정보를 불러오지 못했습니다.");
-          return;
-        }
-
-        const list = data.rows || data.data || [];
-        renderRanking(list);
-      } catch (err) {
-        console.error(err);
-        renderEmptyRanking("서버에 접속할 수 없습니다. server.js가 켜져 있는지 확인해주세요!");
-      }
-    }
-
-    // 페이지 처음 열릴 때 랭킹 한 번 로딩
+    // 처음 로딩 시 랭킹 한 번 불러오기
     fetchColorRanking();
 
     // ==========================
     // 🕹 게임 시작
     // ==========================
     function startGame() {
-      level      = 1;
-      score      = 0;
-      timer      = 5;
+      level = 1;
+      score = 0;
+      timer = 5;
       isGameOver = false;
 
       scoreValueEl.textContent = `${score} 점`;
       timerValueEl.textContent = `남은 시간: ${timer}초`;
       levelValueEl.textContent = `${level} 단계`;
-      resultMsgEl.textContent  = "";
+      resultMsgEl.textContent = "";
 
       clearInterval(countdown);
       makeGrid();
@@ -501,7 +508,7 @@
       gameEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;
 
       const baseColor  = randomColor();
-      const diff       = Math.max(40 - level * 3, 10); // 레벨 올라갈수록 차이↓
+      const diff       = Math.max(40 - level * 3, 10); // 레벨 올라갈수록 색 차이 줄어듦
       const diffColor  = changeBrightness(baseColor, diff);
       const correctIdx = Math.floor(Math.random() * total);
 
@@ -545,12 +552,16 @@
     }
 
     // ==========================
-    // 🏁 게임 종료 + 서버 저장 (PersonGame 패턴)
+    // 🏁 게임 종료 + 점수 저장
     // ==========================
     function endGame() {
       isGameOver = true;
       clearInterval(countdown);
 
+      saveScoreToServer(score);
+    }
+
+    function saveScoreToServer(finalScore) {
       const username = getLoginUsername();
       if (!username) {
         alert("로그인한 회원만 랭킹에 기록됩니다.\nGames 화면 상단에서 먼저 로그인해주세요!");
@@ -558,11 +569,12 @@
       }
 
       fetch("http://localhost:3000/api/color/submit", {
-        // server.js에서 app.post('/api/color/submit', ...) 이라고 써있으니까
-        // 여기도 /submit 으로 맞춰둠!
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, score })
+        body: JSON.stringify({
+          username: username,
+          score: finalScore
+        })
       })
         .then(res => res.json())
         .then(data => {
