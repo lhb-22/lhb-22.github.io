@@ -117,7 +117,6 @@ app.post('/api/login', async (req, res) => {
 // =====================
 
 // 점수 저장 (높은 점수만 유지)
-// ★ ColorGame.html 이 /api/color/save 로 요청하니까 여기 맞춤
 app.post('/api/color/save', async (req, res) => {
   const { username, score } = req.body;
 
@@ -129,19 +128,20 @@ app.post('/api/color/save', async (req, res) => {
   try {
     conn = await pool.getConnection();
 
+    // 기존 점수 조회
     const [rows] = await conn.query(
       'SELECT score FROM color_ranking WHERE username = ?',
       [username]
     );
 
     if (rows.length === 0) {
-      // 첫 점수
+      // 첫 기록
       await conn.query(
         'INSERT INTO color_ranking (username, score) VALUES (?, ?)',
         [username, score]
       );
     } else if (score > rows[0].score) {
-      // 더 높을 때만 갱신
+      // 더 높은 점수면 갱신
       await conn.query(
         'UPDATE color_ranking SET score = ? WHERE username = ?',
         [score, username]
@@ -158,7 +158,6 @@ app.post('/api/color/save', async (req, res) => {
 });
 
 // 랭킹 조회 (높은 점수 순)
-// ★ ColorGame.html 에서 data.data 로 읽으니까 data 로 보내줌
 app.get('/api/color/rank', async (req, res) => {
   let conn;
   try {
@@ -168,7 +167,8 @@ app.get('/api/color/rank', async (req, res) => {
       'SELECT username, score FROM color_ranking ORDER BY score DESC, created_at ASC LIMIT 10'
     );
 
-    res.json({ ok: true, data: rows });
+    // 반응속도처럼 rows 로 보내기
+    res.json({ ok: true, rows });
   } catch (err) {
     console.error('color rank error:', err);
     res.json({ ok: false, message: '랭킹 조회 중 오류가 발생했습니다.' });
@@ -176,6 +176,7 @@ app.get('/api/color/rank', async (req, res) => {
     if (conn) conn.release();
   }
 });
+
 
 // =====================
 // ⚡ 반응 속도 테스트 랭킹
