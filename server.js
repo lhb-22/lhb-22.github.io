@@ -15,7 +15,7 @@ app.use(bodyParser.json());
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: 'lhb0202',   // ★ 여기만 네가 쓰던 값으로 바꾸기
+  password: 'lhb0202',   // ★ MySQL root 비밀번호 맞게 수정
   database: 'lhb_web',
   waitForConnections: true,
   connectionLimit: 10,
@@ -37,9 +37,10 @@ const pool = mysql.createPool({
 // ✅ 회원가입
 // =====================
 app.post('/api/signup', async (req, res) => {
-  const { username, loginId, email, password } = req.body;
+  const { username, loginId, password } = req.body;   // ← email 제거 완료
 
-  if (!username || !loginId || !email || !password) {
+  // 값 체크
+  if (!username || !loginId || !password) {
     return res.json({ ok: false, message: '모든 값을 입력해주세요.' });
   }
 
@@ -56,10 +57,10 @@ app.post('/api/signup', async (req, res) => {
       return res.json({ ok: false, message: '이미 사용 중인 ID입니다.' });
     }
 
-    // 단순 저장(비밀번호 평문) – 과제 용이라 이대로 둬도 됨
+    // 이메일 제거했으므로 3개만 INSERT
     await conn.query(
-      'INSERT INTO users (username, loginId, email, password) VALUES (?, ?, ?, ?)',
-      [username, loginId, email, password]
+      'INSERT INTO users (username, loginId, password) VALUES (?, ?, ?)',
+      [username, loginId, password]
     );
 
     res.json({ ok: true });
@@ -70,6 +71,7 @@ app.post('/api/signup', async (req, res) => {
     if (conn) conn.release();
   }
 });
+
 
 // =====================
 // ✅ 로그인
@@ -115,7 +117,8 @@ app.post('/api/login', async (req, res) => {
 // =====================
 
 // 점수 저장 (높은 점수만 유지)
-app.post('/api/color/submit', async (req, res) => {
+// ★ ColorGame.html 이 /api/color/save 로 요청하니까 여기 맞춤
+app.post('/api/color/save', async (req, res) => {
   const { username, score } = req.body;
 
   if (!username || typeof score !== 'number') {
@@ -147,7 +150,7 @@ app.post('/api/color/submit', async (req, res) => {
 
     res.json({ ok: true });
   } catch (err) {
-    console.error('color submit error:', err);
+    console.error('color save error:', err);
     res.json({ ok: false, message: '점수 저장 중 오류가 발생했습니다.' });
   } finally {
     if (conn) conn.release();
@@ -155,6 +158,7 @@ app.post('/api/color/submit', async (req, res) => {
 });
 
 // 랭킹 조회 (높은 점수 순)
+// ★ ColorGame.html 에서 data.data 로 읽으니까 data 로 보내줌
 app.get('/api/color/rank', async (req, res) => {
   let conn;
   try {
@@ -164,7 +168,7 @@ app.get('/api/color/rank', async (req, res) => {
       'SELECT username, score FROM color_ranking ORDER BY score DESC, created_at ASC LIMIT 10'
     );
 
-    res.json({ ok: true, rows });
+    res.json({ ok: true, data: rows });
   } catch (err) {
     console.error('color rank error:', err);
     res.json({ ok: false, message: '랭킹 조회 중 오류가 발생했습니다.' });
@@ -240,7 +244,7 @@ app.get('/api/reaction/rank', async (req, res) => {
 //  - person_ranking 테이블 (username UNIQUE)
 // =====================
 
-// 🧠 인물 맞추기 게임 점수 저장 (더 높은 점수만 갱신)
+// 점수 저장 (더 높은 점수만 갱신)
 app.post('/api/person/submit', async (req, res) => {
   const { username, score } = req.body;
 
@@ -278,26 +282,7 @@ app.post('/api/person/submit', async (req, res) => {
   }
 });
 
-// 🧠 인물 맞추기 게임 랭킹 조회
-app.get('/api/person/ranking', async (req, res) => {
-  let conn;
-  try {
-    conn = await pool.getConnection();
-
-    const [rows] = await conn.query(
-      'SELECT username, score FROM person_ranking ORDER BY score DESC, created_at ASC LIMIT 10'
-    );
-
-    res.json({ ok: true, rows });
-  } catch (err) {
-    console.error('person ranking error:', err);
-    res.json({ ok: false, message: '인물게임 랭킹 조회 중 오류가 발생했습니다.' });
-  } finally {
-    if (conn) conn.release();
-  }
-});
-
-// 랭킹 조회 (정답 수 높은 순)
+// 인물 맞추기 게임 랭킹 조회 (정답 수 높은 순)
 app.get('/api/person/ranking', async (req, res) => {
   let conn;
   try {
