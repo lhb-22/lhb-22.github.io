@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>고객센터 문의 | LHB GAMES</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Pretendard", sans-serif;
+      background: linear-gradient(135deg, #f0f7ff 0%, #f7f3ff 50%, #edf4ff 100%);
+      color: #1f2933;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 32px 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+      padding: 26px 22px 22px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    p {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .phone-box {
+      margin: 10px auto 14px;
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      min-width: 220px;
+    }
+
+    .phone-label {
+      font-size: 12px;
+      color: #6b7280;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .phone-number {
+      font-size: 20px;
+      font-weight: 800;
+      color: #4f46e5;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .btn-row {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: 1px solid #4f46e5;
+      background: #4f46e5;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+      transition: 0.18s;
+    }
+
+    .btn:hover {
+      background: #4338ca;
+      box-shadow: 0 12px 24px rgba(67, 56, 202, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary {
+      border-color: #9ca3af;
+      background: #e5e7eb;
+      color: #374151;
+      box-shadow: none;
+    }
+
+    .btn.secondary:hover {
+      background: #d1d5db;
+      box-shadow: 0 8px 16px rgba(148, 163, 184, 0.5);
+    }
+
+    footer {
+      margin-top: 14px;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">
+      📞 CUSTOMER SUPPORT
+    </div>
+    <h1>고객센터 문의 안내</h1>
+    <p>
+      게임 사용 중 궁금한 점이나 오류가 있다면<br />
+      아래 전화번호로 연락 부탁드립니다.
+    </p>
+
+    <div class="phone-box">
+      <div class="phone-label">문의 전화</div>
+      <div class="phone-number">010-2103-9175</div>
+    </div>
+
+    <p class="note">
+      통화 가능 시간: 평일 09:00 ~ 18:00<br />
+      통화가 어려울 경우, 문자로 간단한 내용을 남겨주시면 확인 후 연락드리겠습니다.
+    </p>
+
+    <div class="btn-row">
+      <!-- 휴대폰에서 열면 바로 전화 앱으로 연결 -->
+      <a class="btn" href="tel:01021039175">
+        📲 전화 걸기
+      </a>
+      <a class="btn secondary" href="portfolio.html">
+        ⬅ 미니게임 목록으로 돌아가기
+      </a>
+    </div>
+
+    <footer>
+      2301464 이현빈 · LHB GAMES Support
+    </footer>
+  </div>
+</body>
+</html>
