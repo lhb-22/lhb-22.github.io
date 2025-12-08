@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>📊 게임 플레이 기록 대시보드</title>
+
+  <!-- TensorFlow.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #eef2ff 0%, #fdfbff 40%, #e3f2ff 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 12px;
+      color: #1f2933;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 980px;
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+      padding: 22px 24px 26px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 10px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #3949ab;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .back-link {
+      font-size: 12px;
+      color: #6366f1;
+      text-decoration: none;
+      border-radius: 999px;
+      border: 1px solid #c7d2fe;
+      padding: 6px 12px;
+      background: #eef2ff;
+    }
+
+    .back-link:hover {
+      background: #e0e7ff;
+    }
+
+    .search-area {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .search-area input {
+      flex: 0 0 180px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      padding: 7px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .search-area button {
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      padding: 8px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.35);
+    }
+
+    .search-area button:disabled {
+      opacity: 0.6;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .info-chip {
+      margin-left: auto;
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .info-chip code {
+      background: #f3f4ff;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+    }
+
+    .summary-box {
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #f4f4ff;
+      border: 1px solid #e0e7ff;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 22px;
+      font-size: 13px;
+    }
+
+    .summary-item span.label {
+      color: #6b7280;
+      margin-right: 4px;
+    }
+
+    .summary-item span.value {
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 840px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      padding: 14px 14px 12px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #111827;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead {
+      background: #f3f4ff;
+    }
+
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #fafbff;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .badge.color { background: #fee2e2; color: #b91c1c; }
+    .badge.reaction { background: #dcfce7; color: #166534; }
+    .badge.person { background: #e0f2fe; color: #075985; }
+
+    .ai-score {
+      font-size: 32px;
+      font-weight: 800;
+      color: #4f46e5;
+      margin-bottom: 4px;
+    }
+
+    .ai-label {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    .ai-tip {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    .ai-pill {
+      display: inline-block;
+      font-size: 11px;
+      margin-top: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+
+    .empty {
+      font-size: 12px;
+      color: #9ca3af;
+      padding: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="title">게임 플레이 기록 대시보드</div>
+        <div class="subtitle">MongoDB + TensorFlow.js 기반 플레이 로그 분석</div>
+      </div>
+      <a href="portfolio.html" class="back-link">← 미니게임 월드로 돌아가기</a>
+    </header>
+
+    <!-- 검색 영역 -->
+    <div class="search-area">
+      <input
+        type="text"
+        id="usernameInput"
+        placeholder="닉네임 입력 (예: hyunbin)"
+      />
+      <button id="loadBtn">기록 불러오기</button>
+      <div class="info-chip">
+        백엔드: <code>GET /api/logs/:username</code> (MongoDB)
+      </div>
+    </div>
+
+    <!-- 요약 박스 -->
+    <div class="summary-box" id="summaryBox">
+      <div class="summary-item">
+        <span class="label">총 플레이:</span>
+        <span class="value" id="totalPlays">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">최고 색상 점수:</span>
+        <span class="value" id="bestColor">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">최고 인물 점수:</span>
+        <span class="value" id="bestPerson">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">최고 반응속도:</span>
+        <span class="value" id="bestReaction">-</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <!-- 좌측: 로그 테이블 -->
+      <div class="card">
+        <div class="card-title">플레이 로그 (최신 순)</div>
+        <div id="tableArea">
+          <div class="empty">닉네임을 입력하고 <b>기록 불러오기</b> 버튼을 눌러주세요.</div>
+        </div>
+      </div>
+
+      <!-- 우측: TensorFlow.js 분석 결과 -->
+      <div class="card">
+        <div class="card-title">TensorFlow.js 기반 AI 실력 분석</div>
+        <div id="aiArea">
+          <div class="empty">
+            MongoDB에서 플레이 기록을 불러온 뒤,<br>
+            TensorFlow.js로 난이도 점수를 계산합니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ★ Node.js 서버 주소 (로컬에서 시연할 때)
+    const API_BASE = 'http://localhost:3000';
+
+    const usernameInput = document.getElementById('usernameInput');
+    const loadBtn = document.getElementById('loadBtn');
+
+    const tableArea = document.getElementById('tableArea');
+    const aiArea = document.getElementById('aiArea');
+
+    const totalPlaysEl = document.getElementById('totalPlays');
+    const bestColorEl = document.getElementById('bestColor');
+    const bestPersonEl = document.getElementById('bestPerson');
+    const bestReactionEl = document.getElementById('bestReaction');
+
+    loadBtn.addEventListener('click', () => {
+      const username = usernameInput.value.trim();
+      if (!username) {
+        alert('닉네임을 입력해주세요.');
+        return;
+      }
+      loadLogs(username);
+    });
+
+    // 엔터키로도 조회
+    usernameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        loadBtn.click();
+      }
+    });
+
+    async function loadLogs(username) {
+      loadBtn.disabled = true;
+      loadBtn.textContent = '불러오는 중...';
+
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/logs/${encodeURIComponent(username)}`
+        );
+        const data = await res.json();
+
+        if (!data.ok) {
+          alert(data.message || '로그를 불러오는 중 오류가 발생했습니다.');
+          resetButton();
+          return;
+        }
+
+        const logs = data.logs || [];
+
+        renderTable(logs);
+        updateSummary(logs);
+        await runTensorFlowAnalysis(logs);
+
+      } catch (err) {
+        console.error(err);
+        alert('서버에 연결할 수 없습니다. server.js / Docker / MongoDB를 확인해주세요.');
+      } finally {
+        resetButton();
+      }
+    }
+
+    function resetButton() {
+      loadBtn.disabled = false;
+      loadBtn.textContent = '기록 불러오기';
+    }
+
+    function renderTable(logs) {
+      if (!logs.length) {
+        tableArea.innerHTML = '<div class="empty">플레이 기록이 없습니다.</div>';
+        return;
+      }
+
+      let html = `
+        <div style="max-height: 380px; overflow: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>일시</th>
+                <th>게임 종류</th>
+                <th>점수 / 시간</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      for (const log of logs) {
+        const date = log.createdAt ? new Date(log.createdAt) : null;
+        const dateText = date
+          ? date.toLocaleString('ko-KR', { hour12: false })
+          : '-';
+
+        let badgeClass = '';
+        let gameLabel = '';
+
+        if (log.gameType === 'color') {
+          badgeClass = 'color';
+          gameLabel = '색상 구별';
+        } else if (log.gameType === 'reaction') {
+          badgeClass = 'reaction';
+          gameLabel = '반응 속도';
+        } else if (log.gameType === 'person') {
+          badgeClass = 'person';
+          gameLabel = '인물 맞추기';
+        } else {
+          gameLabel = log.gameType || '-';
+        }
+
+        let valueText = '-';
+        if (log.gameType === 'reaction' && typeof log.time === 'number') {
+          valueText = `${log.time.toFixed(0)} ms`;
+        } else if (
+          (log.gameType === 'color' || log.gameType === 'person') &&
+          typeof log.score === 'number'
+        ) {
+          valueText = `${log.score} 점`;
+        }
+
+        html += `
+          <tr>
+            <td>${dateText}</td>
+            <td><span class="badge ${badgeClass}">${gameLabel}</span></td>
+            <td>${valueText}</td>
+          </tr>
+        `;
+      }
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      tableArea.innerHTML = html;
+    }
+
+    function updateSummary(logs) {
+      if (!logs.length) {
+        totalPlaysEl.textContent = '0회';
+        bestColorEl.textContent = '-';
+        bestPersonEl.textContent = '-';
+        bestReactionEl.textContent = '-';
+        return;
+      }
+
+      const colorScores = logs
+        .filter(l => l.gameType === 'color' && typeof l.score === 'number')
+        .map(l => l.score);
+
+      const personScores = logs
+        .filter(l => l.gameType === 'person' && typeof l.score === 'number')
+        .map(l => l.score);
+
+      const reactionTimes = logs
+        .filter(l => l.gameType === 'reaction' && typeof l.time === 'number')
+        .map(l => l.time);
+
+      const bestColor = colorScores.length ? Math.max(...colorScores) : null;
+      const bestPerson = personScores.length ? Math.max(...personScores) : null;
+      const bestReaction = reactionTimes.length ? Math.min(...reactionTimes) : null;
+
+      totalPlaysEl.textContent = logs.length + '회';
+      bestColorEl.textContent = bestColor !== null ? bestColor + ' 점' : '-';
+      bestPersonEl.textContent = bestPerson !== null ? bestPerson + ' 점' : '-';
+      bestReactionEl.textContent = bestReaction !== null ? bestReaction.toFixed(0) + ' ms' : '-';
+    }
+
+    // ✅ TensorFlow.js로 간단한 "실력 점수" 계산
+    async function runTensorFlowAnalysis(logs) {
+      if (!logs.length) {
+        aiArea.innerHTML = `
+          <div class="empty">
+            플레이 기록이 없어서 분석할 수 없습니다.<br>
+            먼저 게임을 플레이해서 기록을 남겨보세요!
+          </div>
+        `;
+        return;
+      }
+
+      const colorScores = logs
+        .filter(l => l.gameType === 'color' && typeof l.score === 'number')
+        .map(l => l.score);
+
+      const personScores = logs
+        .filter(l => l.gameType === 'person' && typeof l.score === 'number')
+        .map(l => l.score);
+
+      const reactionTimes = logs
+        .filter(l => l.gameType === 'reaction' && typeof l.time === 'number')
+        .map(l => l.time);
+
+      const bestColor = colorScores.length ? Math.max(...colorScores) : 0;
+      const bestPerson = personScores.length ? Math.max(...personScores) : 0;
+      const bestReaction = reactionTimes.length ? Math.min(...reactionTimes) : 2500; // ms
+
+      // [0,1] 범위로 정규화
+      const normReaction = Math.max(0, Math.min(1, (2500 - bestReaction) / 2000)); // 빠르면 클수록 좋게
+      const normColor = Math.max(0, Math.min(1, bestColor / 20));                  // 20점 만점 가정
+      const normPerson = Math.max(0, Math.min(1, bestPerson / 10));                // 10점 만점 가정
+
+      // TensorFlow.js 텐서 생성
+      const input = tf.tensor2d([[normReaction, normColor, normPerson]]); // shape: [1, 3]
+
+      // 간단한 로지스틱 회귀: score = sigmoid(Wx + b) * 100
+      const weights = tf.tensor2d([[0.4], [0.3], [0.3]]); // (3,1)
+      const bias = tf.scalar(0.1);
+
+      const scoreTensor = input.matMul(weights).add(bias).sigmoid().mul(100);
+      const scoreArr = await scoreTensor.data();
+      const score = scoreArr[0];
+
+      input.dispose();
+      weights.dispose();
+      bias.dispose();
+      scoreTensor.dispose();
+
+      let levelText = '';
+      let tipText = '';
+
+      if (score >= 80) {
+        levelText = '상위 플레이어 🎯';
+        tipText = '이미 상위권 실력입니다! 난이도를 조금 더 올리거나, 기록 경쟁 위주로 플레이해보세요.';
+      } else if (score >= 50) {
+        levelText = '중급 플레이어 ⚡';
+        tipText = '기록이 안정적인 편입니다. 색상 / 인물 게임을 반복해서 패턴을 익히면 점수를 더 끌어올릴 수 있어요.';
+      } else {
+        levelText = '입문 단계 🚀';
+        tipText = '반응속도보다는 게임 규칙에 익숙해지는 것이 먼저입니다. 짧게 자주 플레이하면서 감을 잡아보세요.';
+      }
+
+      aiArea.innerHTML = `
+        <div class="ai-score">${score.toFixed(1)}점</div>
+        <div class="ai-label">${levelText}</div>
+        <div class="ai-tip">
+          TensorFlow.js로 색상 점수, 인물 점수, 반응 속도 기록을
+          <b>3차원 벡터</b>로 만들어 간단한 선형 모델(가중치 + bias, sigmoid)을 적용해
+          "난이도 추천 점수"를 계산했습니다.
+        </div>
+        <div class="ai-pill">
+          입력 벡터: [반응속도, 색상 점수, 인물 점수] → TensorFlow.js 텐서 연산
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
